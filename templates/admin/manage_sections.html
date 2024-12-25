@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Sections - {{ subject.name }}</title>
+    <title>Manage Sections - Admin</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 </head>
@@ -22,7 +22,7 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin.users') }}">Manage Users</a>
                     </li>
-                    <li class="nav-item active">
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin.subjects') }}">Manage Subjects</a>
                     </li>
                 </ul>
@@ -58,21 +58,15 @@
 
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
                 <li class="breadcrumb-item"><a href="{{ url_for('admin.subjects') }}">Subjects</a></li>
-                <li class="breadcrumb-item active">{{ subject.name }}</li>
+                <li class="breadcrumb-item active">{{ subject.name }} - Sections</li>
             </ol>
         </nav>
 
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">{{ subject.name }}</h5>
-                <p class="card-text">{{ subject.description }}</p>
-            </div>
-        </div>
-
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Manage Sections</h5>
+                <h5 class="mb-0">Manage Sections - {{ subject.name }}</h5>
                 <button class="btn btn-primary" data-toggle="modal" data-target="#addSectionModal">
                     <i class="fas fa-plus"></i> Add Section
                 </button>
@@ -99,7 +93,7 @@
                                 <td>{{ section.topics|length }}</td>
                                 <td>{{ section.updated_at }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-info" onclick="editSection('{{ section.id }}', '{{ section.name }}', '{{ section.description }}', {{ section.order }})" title="Edit Section">
+                                    <button class="btn btn-sm btn-info" onclick="editSection('{{ section.id }}', '{{ section.name }}', '{{ section.description }}', '{{ section.order }}')" title="Edit Section">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <a href="{{ url_for('admin.manage_topics', subject_id=subject.id, section_id=section.id) }}" class="btn btn-sm btn-success" title="Manage Topics">
@@ -131,7 +125,6 @@
                 <form action="{{ url_for('admin.add_section', subject_id=subject.id) }}" method="POST">
                     <div class="modal-body">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="subject_id" value="{{ subject.id }}">
                         <div class="form-group">
                             <label>Name</label>
                             <input type="text" class="form-control" name="name" required>
@@ -142,7 +135,7 @@
                         </div>
                         <div class="form-group">
                             <label>Order</label>
-                            <input type="number" class="form-control" name="order" value="{{ sections|length + 1 }}" required>
+                            <input type="number" class="form-control" name="order" value="1" min="1" required>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -177,7 +170,7 @@
                         </div>
                         <div class="form-group">
                             <label>Order</label>
-                            <input type="number" class="form-control" name="order" id="editOrder" required>
+                            <input type="number" class="form-control" name="order" id="editOrder" min="1" required>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -221,12 +214,12 @@
             document.getElementById('editName').value = name;
             document.getElementById('editDescription').value = description;
             document.getElementById('editOrder').value = order;
-            document.getElementById('editSectionForm').action = "{{ url_for('admin.edit_section', subject_id=subject.id, section_id='') }}".replace('//', '/').replace('section_id=', '') + id;
+            document.getElementById('editSectionForm').action = `/admin/subjects/{{ subject.id }}/sections/${id}`;
             $('#editSectionModal').modal('show');
         }
 
         function deleteSection(id) {
-            document.getElementById('deleteSectionForm').action = "{{ url_for('admin.delete_section', subject_id=subject.id, section_id='') }}".replace('//', '/').replace('section_id=', '') + id;
+            document.getElementById('deleteSectionForm').action = `/admin/subjects/{{ subject.id }}/sections/${id}/delete`;
             $('#deleteSectionModal').modal('show');
         }
     </script>

@@ -3,16 +3,19 @@ Application initialization module.
 """
 
 import os
-from flask import Flask
+from flask import Flask, request, session
 from flask_jwt_extended import JWTManager
 from flask_talisman import Talisman
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_login import LoginManager
+from flask_login import LoginManager, user_loaded_from_request
 from flask_wtf.csrf import CSRFProtect
 from .config import config
 from .services.data_service import load_data
+from .services.session_service import track_session
 from .models import User
+from .error_handlers import register_error_handlers
+import uuid
 
 jwt = JWTManager()
 limiter = Limiter(key_func=get_remote_address)
@@ -44,21 +47,41 @@ def create_app(config_name='development'):
     csrf.init_app(app)
     
     # Security headers
-    csp = {
-        'default-src': "'self'",
-        'img-src': "'self' data: https:",
-        'script-src': "'self' 'unsafe-inline' 'unsafe-eval' https://stackpath.bootstrapcdn.com https://code.jquery.com https://cdn.jsdelivr.net",
-        'style-src': "'self' 'unsafe-inline' https://stackpath.bootstrapcdn.com",
-        'font-src': "'self' https://stackpath.bootstrapcdn.com",
-    }
-    Talisman(app, content_security_policy=csp)
+    csp = app.config.get('TALISMAN_CONTENT_SECURITY_POLICY', {})
+    Talisman(app, 
+             content_security_policy=csp,
+             force_https=app.config.get('TALISMAN_FORCE_HTTPS', True))
     
     # Register blueprints
     from .routes import auth, main
     from .admin import admin
+    from .api import api
     
     app.register_blueprint(auth)
     app.register_blueprint(main)
     app.register_blueprint(admin)
+    app.register_blueprint(api)
+    
+    # Register error handlers
+    register_error_handlers(app)
+    
+    # Ensure required directories exist
+    os.makedirs(app.config['DATA_DIR'], exist_ok=True)
+    log_dir = os.path.dirname(app.config['LOG_FILE'])
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+
+    @app.before_request
+    def before_request():
+        """Set up session tracking before each request."""
+        if not session.get('_id'):
+            session['_id'] = str(uuid.uuid4())
+        session['ip_address'] = request.remote_addr
+        track_session()
+
+    @user_loaded_from_request.connect
+    def on_user_loaded(sender, user):
+        """Track session when user is loaded."""
+        track_session()
     
     return app

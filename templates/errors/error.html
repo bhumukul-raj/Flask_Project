@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ error_name }} - Error {{ error_code }}</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .error-template {
+            padding: 40px 15px;
+            text-align: center;
+        }
+        .error-actions {
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .error-actions .btn {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="error-template">
+                    <h1>Oops!</h1>
+                    <h2>{{ error_code }} - {{ error_name }}</h2>
+                    <div class="error-details mb-4">
+                        {{ error_description }}
+                    </div>
+                    <div class="error-actions">
+                        <a href="{{ url_for('main.home') }}" class="btn btn-primary">
+                            <i class="fas fa-home"></i> Take Me Home
+                        </a>
+                        {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+                            <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

@@ -5,11 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to Learning Platform</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background-color: #f8f9fa;
+            padding: 60px 0;
+            margin-bottom: 40px;
+            border-radius: 10px;
+        }
+        .feature-box {
+            text-align: center;
+            padding: 30px;
+            margin-bottom: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .feature-box:hover {
+            transform: translateY(-5px);
+        }
+        .feature-icon {
+            font-size: 2.5rem;
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center mb-4">Welcome to the Learning Platform</h1>
-        
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.home') }}">Learning Platform</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.subjects') }}">All Subjects</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -23,27 +78,51 @@
             {% endif %}
         {% endwith %}
 
-        <div class="text-center">
-            <div class="btn-group" role="group" aria-label="Navigation">
-                <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Login</a>
-                <a href="{{ url_for('auth.register') }}" class="btn btn-success">Register</a>
+        <div class="hero-section">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-8 text-center">
+                        <h1 class="display-4 mb-4">Welcome to Learning Platform</h1>
+                        {% if current_user.is_authenticated %}
+                            <h3 class="mb-4">Welcome back, {{ current_user.username }}!</h3>
+                            <p class="lead mb-4">Continue your learning journey with us.</p>
+                            <div class="btn-group" role="group" aria-label="Navigation">
+                                <a href="{{ url_for('main.subjects') }}" class="btn btn-primary btn-lg">View All Subjects</a>
+                                <a href="{{ url_for('main.dashboard') }}" class="btn btn-info btn-lg">Go to Dashboard</a>
+                            </div>
+                        {% else %}
+                            <p class="lead mb-4">Your gateway to knowledge and skills development</p>
+                            <div class="btn-group" role="group" aria-label="Navigation">
+                                <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Login</a>
+                                <a href="{{ url_for('auth.register') }}" class="btn btn-success btn-lg">Register</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="mt-4">
-            <h2>Featured Subjects</h2>
-            <div class="row">
-                {% for subject in featured_subjects %}
-                <div class="col-md-4 mb-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ subject.name }}</h5>
-                            <p class="card-text">{{ subject.description }}</p>
-                            <a href="{{ url_for('main.subject_detail', subject_id=subject.id) }}" class="btn btn-info">Learn More</a>
-                        </div>
-                    </div>
+        <div class="row mt-5">
+            <div class="col-md-4">
+                <div class="feature-box">
+                    <i class="fas fa-book-reader feature-icon"></i>
+                    <h3>Quality Content</h3>
+                    <p>Access high-quality educational materials curated by experts.</p>
                 </div>
-                {% endfor %}
+            </div>
+            <div class="col-md-4">
+                <div class="feature-box">
+                    <i class="fas fa-users feature-icon"></i>
+                    <h3>Expert Instructors</h3>
+                    <p>Learn from experienced instructors in various fields.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-box">
+                    <i class="fas fa-certificate feature-icon"></i>
+                    <h3>Certificates</h3>
+                    <p>Earn certificates upon completing your courses.</p>
+                </div>
             </div>
         </div>
     </div>

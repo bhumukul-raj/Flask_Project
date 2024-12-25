@@ -6,7 +6,7 @@ This module defines all web routes for the application.
 
 import uuid
 from datetime import datetime, UTC
-from flask import Blueprint, jsonify, request, current_app, render_template, redirect, url_for, flash
+from flask import Blueprint, jsonify, request, current_app, render_template, redirect, url_for, flash, session
 from flask_jwt_extended import (
     create_access_token, create_refresh_token,
     jwt_required, get_jwt_identity, get_jwt,
@@ -20,6 +20,7 @@ from .models import User
 import re
 from functools import wraps
 import time
+from .services.session_service import remove_session, clear_user_sessions
 
 auth = Blueprint('auth', __name__, url_prefix='/auth')
 main = Blueprint('main', __name__)
@@ -64,20 +65,20 @@ def rate_limit(max_attempts: int, window: int):
 @main.route('/')
 def home():
     """Home page."""
-    subjects_data = load_data('subject_database.json')
-    featured_subjects = subjects_data.get('subjects', [])[:3]  # Get first 3 subjects as featured
-    return render_template('public/home.html', featured_subjects=featured_subjects)
+    return render_template('public/home.html')
 
 @main.route('/subjects')
+@login_required
 def subjects():
-    """List all subjects."""
+    """List all subjects. Only accessible to authenticated users."""
     subjects_data = load_data('subject_database.json')
     subjects = subjects_data.get('subjects', [])
     return render_template('public/index.html', subjects=subjects)
 
 @main.route('/subject/<subject_id>')
+@login_required
 def subject_detail(subject_id):
-    """Show subject details."""
+    """Show subject details. Only accessible to authenticated users."""
     subjects_data = load_data('subject_database.json')
     subject = next(
         (s for s in subjects_data.get('subjects', []) if s.get('id') == subject_id),
@@ -158,83 +159,64 @@ def register():
 @auth.route('/login', methods=['GET', 'POST'])
 @rate_limit(MAX_ATTEMPTS, ATTEMPT_WINDOW)
 def login():
-    """Log in a user."""
-    if request.method == 'GET':
-        return render_template('auth/login.html')
-        
-    try:
-        data = request.form
-        if not data:
-            current_app.logger.debug("Missing form data")
-            flash('Missing form data', 'error')
-            return redirect(url_for('auth.login'))
-            
-        username = data.get('username')
-        password = data.get('password')
-        
-        current_app.logger.debug(f"Login attempt - Username: {username}, Password length: {len(password) if password else 0}")
+    """User login."""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.dashboard'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        remember = bool(request.form.get('remember'))
         
         if not username or not password:
-            current_app.logger.debug("Username or password missing")
             flash('Username and password are required', 'error')
-            return redirect(url_for('auth.login'))
+            return render_template('auth/login.html')
+        
+        try:
+            # Load users
+            users_data = load_data('users.json')
+            users = users_data.get('users', [])
             
-        # Load users
-        users_data = load_data('users.json')
-        users = users_data.get('users', [])
-        
-        current_app.logger.debug(f"Loaded users count: {len(users)}")
-        
-        # Find user by username (case-insensitive)
-        user_data = next(
-            (u for u in users if u.get('username', '').lower() == username.lower()),
-            None
-        )
-        
-        current_app.logger.debug(f"Found user data: {user_data}")
-        
-        if not user_data:
-            current_app.logger.debug("User not found")
-            flash('Invalid credentials', 'error')
-            return redirect(url_for('auth.login'))
-
-        # Create User object
-        user = User(user_data)
-        
-        # Verify password
-        current_app.logger.debug("Verifying password...")
-        current_app.logger.debug(f"Stored hash: {user_data['password']}")
-        current_app.logger.debug(f"Input password: {password}")
-        is_valid = check_password_hash(user_data['password'], password)
-        current_app.logger.debug(f"Password valid: {is_valid}")
-        
-        if not is_valid:
-            current_app.logger.debug("Invalid password")
-            flash('Invalid credentials', 'error')
-            return redirect(url_for('auth.login'))
+            # Find user by username (case-insensitive)
+            user_data = next(
+                (u for u in users if u.get('username', '').lower() == username.lower()),
+                None
+            )
             
-        # Login the user
-        login_user(user)
-        current_app.logger.debug("User logged in successfully")
+            if not user_data:
+                flash('Invalid username or password', 'error')
+                return render_template('auth/login.html')
             
-        # Update last login time
-        user_data['last_login'] = datetime.now(UTC).isoformat()
-        if not save_data('users.json', {'users': users}):
-            current_app.logger.debug("Failed to save last login time")
-            flash('Login failed', 'error')
-            return redirect(url_for('auth.login'))
-        
-        flash('Login successful!', 'success')
-        # Redirect admin users to admin dashboard, regular users to user dashboard
-        if user.is_admin():
-            return redirect(url_for('admin.dashboard'))
-        else:
-            return redirect(url_for('main.dashboard'))
-        
-    except Exception as e:
-        current_app.logger.error(f"Error in login: {str(e)}")
-        flash('Login failed', 'error')
-        return redirect(url_for('auth.login'))
+            # Create User object and verify password
+            user = User(user_data)
+            if not check_password_hash(user_data['password'], password):
+                flash('Invalid username or password', 'error')
+                return render_template('auth/login.html')
+            
+            # Clear any existing sessions for this user
+            clear_user_sessions(user.get_id())
+            
+            # Log in the user
+            login_user(user, remember=remember)
+            
+            # Update last login time
+            user_data['last_login'] = datetime.now(UTC).isoformat()
+            save_data('users.json', {'users': users})
+            
+            # Create JWT token
+            access_token = create_access_token(identity=user.get_id())
+            response = redirect(url_for('main.dashboard'))
+            set_access_cookies(response, access_token)
+            
+            flash('Login successful', 'success')
+            return response
+            
+        except Exception as e:
+            current_app.logger.error(f"Login error: {str(e)}")
+            flash('An error occurred during login. Please try again.', 'error')
+            return render_template('auth/login.html')
+    
+    return render_template('auth/login.html')
 
 @auth.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
@@ -257,13 +239,24 @@ def refresh():
 def logout():
     """Log out a user."""
     try:
-        # Add token to blocklist if present
-        jwt = get_jwt()
-        if jwt:
-            current_app.revoked_tokens.add(jwt["jti"])
+        # Get session ID before logging out
+        session_id = session.get('_id')
         
         # Log out the user
         logout_user()
+        
+        # Remove session from active sessions
+        if session_id:
+            remove_session(session_id)
+        
+        # Try to get JWT token if it exists
+        try:
+            jwt = get_jwt()
+            if jwt:
+                current_app.revoked_tokens.add(jwt["jti"])
+        except Exception:
+            # No JWT token found, which is fine
+            pass
         
         response = redirect(url_for('main.home'))
         unset_jwt_cookies(response)
@@ -279,9 +272,3 @@ def logout():
 def dashboard():
     """User dashboard."""
     return render_template('dashboard/dashboard.html')
-
-@auth.route('/generate_hash/<password>')
-def generate_hash(password):
-    """Temporary route to generate password hash."""
-    hashed = generate_password_hash(password)
-    return jsonify({'hash': hashed})

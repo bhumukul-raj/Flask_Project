@@ -1,7 +1,23 @@
 """
 Admin Module
 
-This module handles all admin-related routes and functionality.
+This module handles all admin-related functionality including:
+- User management (CRUD operations)
+- Subject management (CRUD operations)
+- Section management within subjects
+- Topic management within sections
+- Admin dashboard statistics
+
+Routes:
+- /admin/dashboard: Admin dashboard with statistics
+- /admin/users: User management interface
+- /admin/subjects: Subject management interface
+- /admin/subjects/<subject_id>/sections: Section management interface
+- /admin/subjects/<subject_id>/sections/<section_id>/topics: Topic management interface
+
+Dependencies:
+- Flask-Login for authentication
+- JSON files for data storage
 """
 
 import uuid
@@ -12,51 +28,169 @@ from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 from .services.data_service import load_data, save_data
 from .utils.validators import validate_username, validate_password
+from .services.session_service import get_active_sessions, get_active_sessions_count, remove_session
 import json
+import logging
+
+# Configure logger for admin module
+logger = logging.getLogger(__name__)
 
 admin = Blueprint('admin', __name__, url_prefix='/admin')
 
 def admin_required(f):
-    """Decorator to check if user is an admin."""
+    """
+    Decorator to check if user has admin privileges.
+
+    This decorator should be used after @login_required to ensure
+    only authenticated admin users can access the protected routes.
+
+    Args:
+        f (function): The function to be decorated. This is the view function
+                      that requires admin privileges to access.
+
+    Returns:
+        function: The wrapped function with admin check. This function will
+                  perform the authentication and authorization checks before
+                  allowing access to the original function.
+
+    Raises:
+        None directly, but may trigger a redirect if the user is not
+        authenticated or lacks admin privileges.
+
+    Note:
+        This decorator assumes the use of Flask-Login for user authentication
+        and that the User model has an `is_admin()` method.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or not current_user.is_admin():
+            logger.warning(f'Unauthorized access attempt to admin area by user: {current_user.username if current_user.is_authenticated else "anonymous"}')
             flash('You do not have permission to access this page.', 'error')
             return redirect(url_for('main.dashboard'))
         return f(*args, **kwargs)
     return decorated_function
 
+def load_subject_by_id(subject_id):
+    """
+    Load a subject from the database by its ID.
+    
+    Args:
+        subject_id (str): The ID of the subject to load
+        
+    Returns:
+        dict: The subject data if found, None otherwise
+        
+    Note:
+        This is a helper function used by various subject management routes.
+    """
+    try:
+        subjects_data = load_data('subject_database.json')
+        subjects = subjects_data.get('subjects', [])
+        subject = next((s for s in subjects if s['id'] == subject_id), None)
+        if subject:
+            logger.debug(f'Subject loaded successfully: {subject_id}')
+        else:
+            logger.warning(f'Subject not found: {subject_id}')
+        return subject
+    except Exception as e:
+        logger.error(f'Error loading subject {subject_id}: {str(e)}')
+        return None
+
+def save_subject(subject):
+    """
+    Save or update a subject in the database.
+    
+    Args:
+        subject (dict): The subject data to save
+        
+    Returns:
+        bool: True if save was successful, False otherwise
+        
+    Note:
+        This function handles both creating new subjects and updating existing ones.
+    """
+    try:
+        subjects_data = load_data('subject_database.json')
+        subjects = subjects_data.get('subjects', [])
+        
+        subject_index = next((i for i, s in enumerate(subjects) if s['id'] == subject['id']), -1)
+        if subject_index >= 0:
+            subjects[subject_index] = subject
+            logger.info(f'Subject updated: {subject["id"]}')
+        else:
+            subjects.append(subject)
+            logger.info(f'New subject created: {subject["id"]}')
+        
+        return save_data('subject_database.json', {'subjects': subjects})
+    except Exception as e:
+        logger.error(f'Error saving subject {subject.get("id")}: {str(e)}')
+        return False
+
 @admin.route('/dashboard')
 @login_required
 @admin_required
 def dashboard():
-    """Admin dashboard."""
-    # Load data for dashboard
-    users_data = load_data('users.json')
-    subjects_data = load_data('subject_database.json')
+    """
+    Admin dashboard view showing system statistics and recent activities.
     
-    # Calculate statistics
-    user_count = len(users_data.get('users', []))
-    subject_count = len(subjects_data.get('subjects', []))
-    active_sessions = 1  # This should be implemented with proper session tracking
+    Displays:
+    - Total number of users
+    - Total number of subjects
+    - Active sessions count and details
+    - Recent user activities (last 5 logins)
     
-    # Get recent activities (last 5 logins)
-    recent_activities = []
-    for user in sorted(users_data.get('users', []), 
-                      key=lambda x: x.get('last_login', ''), 
-                      reverse=True)[:5]:
-        if user.get('last_login'):
-            recent_activities.append({
-                'user': user['username'],
-                'time': user['last_login'],
-                'action': 'Logged in'
-            })
-    
-    return render_template('admin/admin_dashboard.html',
-                         user_count=user_count,
-                         subject_count=subject_count,
-                         active_sessions=active_sessions,
-                         recent_activities=recent_activities)
+    Returns:
+        rendered template: admin_dashboard.html with context data
+    """
+    try:
+        # Load data for dashboard
+        users_data = load_data('users.json')
+        subjects_data = load_data('subject_database.json')
+        
+        # Calculate statistics
+        user_count = len(users_data.get('users', []))
+        subject_count = len(subjects_data.get('subjects', []))
+        
+        # Get active sessions
+        active_sessions = get_active_sessions()
+        active_sessions_count = get_active_sessions_count()
+        
+        # Get recent activities (last 5 logins)
+        recent_activities = []
+        for user in sorted(users_data.get('users', []), 
+                          key=lambda x: x.get('last_login', ''), 
+                          reverse=True)[:5]:
+            if user.get('last_login'):
+                recent_activities.append({
+                    'user': user['username'],
+                    'time': user['last_login'],
+                    'action': 'Logged in'
+                })
+        
+        logger.info(f'Admin dashboard accessed by {current_user.username}')
+        return render_template('admin/admin_dashboard.html',
+                             user_count=user_count,
+                             subject_count=subject_count,
+                             active_sessions=active_sessions,
+                             active_sessions_count=active_sessions_count,
+                             recent_activities=recent_activities)
+    except Exception as e:
+        logger.error(f'Error loading admin dashboard: {str(e)}')
+        flash('Error loading dashboard data', 'error')
+        return redirect(url_for('main.home'))
+
+@admin.route('/terminate_session/<session_id>', methods=['POST'])
+@login_required
+@admin_required
+def terminate_session(session_id):
+    """Terminate a specific user session."""
+    try:
+        remove_session(session_id)
+        flash('Session terminated successfully', 'success')
+    except Exception as e:
+        logger.error(f'Error terminating session: {str(e)}')
+        flash('Error terminating session', 'error')
+    return redirect(url_for('admin.dashboard'))
 
 @admin.route('/users')
 @login_required
@@ -377,247 +511,303 @@ def change_password():
         return redirect(url_for('admin.users'))
 
 @admin.route('/subjects/<subject_id>/sections')
+@login_required
 @admin_required
 def manage_sections(subject_id):
-    subject = load_subject_by_id(subject_id)
-    if not subject:
-        flash('Subject not found.', 'danger')
+    """Manage sections for a subject."""
+    try:
+        subject = load_subject_by_id(subject_id)
+        if not subject:
+            flash('Subject not found', 'error')
+            return redirect(url_for('admin.subjects'))
+        
+        sections = subject.get('sections', [])
+        return render_template('admin/manage_sections.html', 
+                             subject=subject, 
+                             sections=sections)
+    except Exception as e:
+        logger.error(f'Error loading sections: {str(e)}')
+        flash('Error loading sections', 'error')
         return redirect(url_for('admin.subjects'))
-    
-    sections = subject.get('sections', [])
-    return render_template('admin/manage_sections.html', subject=subject, sections=sections)
 
 @admin.route('/subjects/<subject_id>/sections/add', methods=['POST'])
+@login_required
 @admin_required
 def add_section(subject_id):
-    subject = load_subject_by_id(subject_id)
-    if not subject:
-        flash('Subject not found.', 'danger')
-        return redirect(url_for('admin.subjects'))
-    
-    name = request.form.get('name')
-    description = request.form.get('description')
-    order = int(request.form.get('order', 1))
-    
-    if not name or not description:
-        flash('Name and description are required.', 'danger')
+    """Add a new section to a subject."""
+    try:
+        subject = load_subject_by_id(subject_id)
+        if not subject:
+            flash('Subject not found', 'error')
+            return redirect(url_for('admin.subjects'))
+        
+        name = request.form.get('name')
+        description = request.form.get('description')
+        order = int(request.form.get('order', 1))
+        
+        if not name or not description:
+            flash('Name and description are required', 'error')
+            return redirect(url_for('admin.manage_sections', subject_id=subject_id))
+        
+        new_section = {
+            'id': str(uuid.uuid4()),
+            'name': name,
+            'description': description,
+            'order': order,
+            'topics': [],
+            'created_at': datetime.utcnow().isoformat(),
+            'updated_at': datetime.utcnow().isoformat()
+        }
+        
+        if 'sections' not in subject:
+            subject['sections'] = []
+        subject['sections'].append(new_section)
+        
+        if save_subject(subject):
+            flash('Section added successfully', 'success')
+        else:
+            flash('Failed to add section', 'error')
+        
         return redirect(url_for('admin.manage_sections', subject_id=subject_id))
-    
-    new_section = {
-        'id': str(uuid.uuid4()),
-        'name': name,
-        'description': description,
-        'order': order,
-        'topics': [],
-        'created_at': datetime.utcnow().isoformat(),
-        'updated_at': datetime.utcnow().isoformat()
-    }
-    
-    if 'sections' not in subject:
-        subject['sections'] = []
-    subject['sections'].append(new_section)
-    save_subject(subject)
-    
-    flash('Section added successfully.', 'success')
-    return redirect(url_for('admin.manage_sections', subject_id=subject_id))
+    except Exception as e:
+        logger.error(f'Error adding section: {str(e)}')
+        flash('Error adding section', 'error')
+        return redirect(url_for('admin.manage_sections', subject_id=subject_id))
 
 @admin.route('/subjects/<subject_id>/sections/<section_id>', methods=['POST'])
+@login_required
 @admin_required
 def edit_section(subject_id, section_id):
-    subject = load_subject_by_id(subject_id)
-    if not subject:
-        flash('Subject not found.', 'danger')
-        return redirect(url_for('admin.subjects'))
-    
-    sections = subject.get('sections', [])
-    section = next((s for s in sections if s['id'] == section_id), None)
-    if not section:
-        flash('Section not found.', 'danger')
+    """Edit a section."""
+    try:
+        subject = load_subject_by_id(subject_id)
+        if not subject:
+            flash('Subject not found', 'error')
+            return redirect(url_for('admin.subjects'))
+        
+        sections = subject.get('sections', [])
+        section = next((s for s in sections if s['id'] == section_id), None)
+        if not section:
+            flash('Section not found', 'error')
+            return redirect(url_for('admin.manage_sections', subject_id=subject_id))
+        
+        name = request.form.get('name')
+        description = request.form.get('description')
+        order = int(request.form.get('order', section['order']))
+        
+        if not name or not description:
+            flash('Name and description are required', 'error')
+            return redirect(url_for('admin.manage_sections', subject_id=subject_id))
+        
+        section.update({
+            'name': name,
+            'description': description,
+            'order': order,
+            'updated_at': datetime.utcnow().isoformat()
+        })
+        
+        if save_subject(subject):
+            flash('Section updated successfully', 'success')
+        else:
+            flash('Failed to update section', 'error')
+        
         return redirect(url_for('admin.manage_sections', subject_id=subject_id))
-    
-    name = request.form.get('name')
-    description = request.form.get('description')
-    order = int(request.form.get('order', section['order']))
-    
-    if not name or not description:
-        flash('Name and description are required.', 'danger')
+    except Exception as e:
+        logger.error(f'Error updating section: {str(e)}')
+        flash('Error updating section', 'error')
         return redirect(url_for('admin.manage_sections', subject_id=subject_id))
-    
-    section['name'] = name
-    section['description'] = description
-    section['order'] = order
-    section['updated_at'] = datetime.utcnow().isoformat()
-    
-    save_subject(subject)
-    flash('Section updated successfully.', 'success')
-    return redirect(url_for('admin.manage_sections', subject_id=subject_id))
 
 @admin.route('/subjects/<subject_id>/sections/<section_id>/delete', methods=['POST'])
+@login_required
 @admin_required
 def delete_section(subject_id, section_id):
-    subject = load_subject_by_id(subject_id)
-    if not subject:
-        flash('Subject not found.', 'danger')
-        return redirect(url_for('admin.subjects'))
-    
-    sections = subject.get('sections', [])
-    section = next((s for s in sections if s['id'] == section_id), None)
-    if not section:
-        flash('Section not found.', 'danger')
+    """Delete a section."""
+    try:
+        subject = load_subject_by_id(subject_id)
+        if not subject:
+            flash('Subject not found', 'error')
+            return redirect(url_for('admin.subjects'))
+        
+        sections = subject.get('sections', [])
+        section = next((s for s in sections if s['id'] == section_id), None)
+        if not section:
+            flash('Section not found', 'error')
+            return redirect(url_for('admin.manage_sections', subject_id=subject_id))
+        
+        subject['sections'] = [s for s in sections if s['id'] != section_id]
+        
+        if save_subject(subject):
+            flash('Section deleted successfully', 'success')
+        else:
+            flash('Failed to delete section', 'error')
+        
         return redirect(url_for('admin.manage_sections', subject_id=subject_id))
-    
-    subject['sections'] = [s for s in sections if s['id'] != section_id]
-    save_subject(subject)
-    
-    flash('Section deleted successfully.', 'success')
-    return redirect(url_for('admin.manage_sections', subject_id=subject_id))
+    except Exception as e:
+        logger.error(f'Error deleting section: {str(e)}')
+        flash('Error deleting section', 'error')
+        return redirect(url_for('admin.manage_sections', subject_id=subject_id))
 
 @admin.route('/subjects/<subject_id>/sections/<section_id>/topics')
+@login_required
 @admin_required
 def manage_topics(subject_id, section_id):
-    subject = load_subject_by_id(subject_id)
-    if not subject:
-        flash('Subject not found.', 'danger')
-        return redirect(url_for('admin.subjects'))
-    
-    sections = subject.get('sections', [])
-    section = next((s for s in sections if s['id'] == section_id), None)
-    if not section:
-        flash('Section not found.', 'danger')
+    """Manage topics for a section."""
+    try:
+        subject = load_subject_by_id(subject_id)
+        if not subject:
+            flash('Subject not found', 'error')
+            return redirect(url_for('admin.subjects'))
+        
+        section = next((s for s in subject.get('sections', []) if s['id'] == section_id), None)
+        if not section:
+            flash('Section not found', 'error')
+            return redirect(url_for('admin.manage_sections', subject_id=subject_id))
+        
+        topics = section.get('topics', [])
+        return render_template('admin/manage_topics.html',
+                             subject=subject,
+                             section=section,
+                             topics=topics)
+    except Exception as e:
+        logger.error(f'Error loading topics: {str(e)}')
+        flash('Error loading topics', 'error')
         return redirect(url_for('admin.manage_sections', subject_id=subject_id))
-    
-    topics = section.get('topics', [])
-    return render_template('admin/manage_topics.html', subject=subject, section=section, topics=topics)
 
 @admin.route('/subjects/<subject_id>/sections/<section_id>/topics/add', methods=['POST'])
+@login_required
 @admin_required
 def add_topic(subject_id, section_id):
-    subject = load_subject_by_id(subject_id)
-    if not subject:
-        flash('Subject not found.', 'danger')
-        return redirect(url_for('admin.subjects'))
-    
-    sections = subject.get('sections', [])
-    section = next((s for s in sections if s['id'] == section_id), None)
-    if not section:
-        flash('Section not found.', 'danger')
-        return redirect(url_for('admin.manage_sections', subject_id=subject_id))
-    
-    name = request.form.get('name')
-    description = request.form.get('description')
-    content_type = request.form.get('content_type')
-    order = int(request.form.get('order', 1))
-    
-    if not all([name, description, content_type]):
-        flash('All fields are required.', 'danger')
+    """Add a new topic to a section."""
+    try:
+        subject = load_subject_by_id(subject_id)
+        if not subject:
+            flash('Subject not found', 'error')
+            return redirect(url_for('admin.subjects'))
+        
+        sections = subject.get('sections', [])
+        section = next((s for s in sections if s['id'] == section_id), None)
+        if not section:
+            flash('Section not found', 'error')
+            return redirect(url_for('admin.manage_sections', subject_id=subject_id))
+        
+        name = request.form.get('name')
+        description = request.form.get('description')
+        content_type = request.form.get('content_type')
+        order = int(request.form.get('order', 1))
+        
+        if not all([name, description, content_type]):
+            flash('All fields are required', 'error')
+            return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+        
+        new_topic = {
+            'id': str(uuid.uuid4()),
+            'name': name,
+            'description': description,
+            'content_type': content_type,
+            'order': order,
+            'content': '',
+            'created_at': datetime.utcnow().isoformat(),
+            'updated_at': datetime.utcnow().isoformat()
+        }
+        
+        if 'topics' not in section:
+            section['topics'] = []
+        section['topics'].append(new_topic)
+        
+        if save_subject(subject):
+            flash('Topic added successfully', 'success')
+        else:
+            flash('Failed to add topic', 'error')
+        
         return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
-    
-    new_topic = {
-        'id': str(uuid.uuid4()),
-        'name': name,
-        'description': description,
-        'content_type': content_type,
-        'order': order,
-        'content': '',
-        'created_at': datetime.utcnow().isoformat(),
-        'updated_at': datetime.utcnow().isoformat()
-    }
-    
-    if 'topics' not in section:
-        section['topics'] = []
-    section['topics'].append(new_topic)
-    save_subject(subject)
-    
-    flash('Topic added successfully.', 'success')
-    return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+    except Exception as e:
+        logger.error(f'Error adding topic: {str(e)}')
+        flash('Error adding topic', 'error')
+        return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
 
 @admin.route('/subjects/<subject_id>/sections/<section_id>/topics/<topic_id>', methods=['POST'])
+@login_required
 @admin_required
 def edit_topic(subject_id, section_id, topic_id):
-    subject = load_subject_by_id(subject_id)
-    if not subject:
-        flash('Subject not found.', 'danger')
-        return redirect(url_for('admin.subjects'))
-    
-    sections = subject.get('sections', [])
-    section = next((s for s in sections if s['id'] == section_id), None)
-    if not section:
-        flash('Section not found.', 'danger')
-        return redirect(url_for('admin.manage_sections', subject_id=subject_id))
-    
-    topics = section.get('topics', [])
-    topic = next((t for t in topics if t['id'] == topic_id), None)
-    if not topic:
-        flash('Topic not found.', 'danger')
+    """Edit a topic."""
+    try:
+        subject = load_subject_by_id(subject_id)
+        if not subject:
+            flash('Subject not found', 'error')
+            return redirect(url_for('admin.subjects'))
+        
+        sections = subject.get('sections', [])
+        section = next((s for s in sections if s['id'] == section_id), None)
+        if not section:
+            flash('Section not found', 'error')
+            return redirect(url_for('admin.manage_sections', subject_id=subject_id))
+        
+        topics = section.get('topics', [])
+        topic = next((t for t in topics if t['id'] == topic_id), None)
+        if not topic:
+            flash('Topic not found', 'error')
+            return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+        
+        name = request.form.get('name')
+        description = request.form.get('description')
+        content_type = request.form.get('content_type')
+        order = int(request.form.get('order', topic['order']))
+        
+        if not all([name, description, content_type]):
+            flash('All fields are required', 'error')
+            return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+        
+        topic.update({
+            'name': name,
+            'description': description,
+            'content_type': content_type,
+            'order': order,
+            'updated_at': datetime.utcnow().isoformat()
+        })
+        
+        if save_subject(subject):
+            flash('Topic updated successfully', 'success')
+        else:
+            flash('Failed to update topic', 'error')
+        
         return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
-    
-    name = request.form.get('name')
-    description = request.form.get('description')
-    content_type = request.form.get('content_type')
-    order = int(request.form.get('order', topic['order']))
-    
-    if not all([name, description, content_type]):
-        flash('All fields are required.', 'danger')
+    except Exception as e:
+        logger.error(f'Error updating topic: {str(e)}')
+        flash('Error updating topic', 'error')
         return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
-    
-    topic['name'] = name
-    topic['description'] = description
-    topic['content_type'] = content_type
-    topic['order'] = order
-    topic['updated_at'] = datetime.utcnow().isoformat()
-    
-    save_subject(subject)
-    flash('Topic updated successfully.', 'success')
-    return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
 
 @admin.route('/subjects/<subject_id>/sections/<section_id>/topics/<topic_id>/delete', methods=['POST'])
+@login_required
 @admin_required
 def delete_topic(subject_id, section_id, topic_id):
-    subject = load_subject_by_id(subject_id)
-    if not subject:
-        flash('Subject not found.', 'danger')
-        return redirect(url_for('admin.subjects'))
-    
-    sections = subject.get('sections', [])
-    section = next((s for s in sections if s['id'] == section_id), None)
-    if not section:
-        flash('Section not found.', 'danger')
-        return redirect(url_for('admin.manage_sections', subject_id=subject_id))
-    
-    topics = section.get('topics', [])
-    topic = next((t for t in topics if t['id'] == topic_id), None)
-    if not topic:
-        flash('Topic not found.', 'danger')
+    """Delete a topic."""
+    try:
+        subject = load_subject_by_id(subject_id)
+        if not subject:
+            flash('Subject not found', 'error')
+            return redirect(url_for('admin.subjects'))
+        
+        sections = subject.get('sections', [])
+        section = next((s for s in sections if s['id'] == section_id), None)
+        if not section:
+            flash('Section not found', 'error')
+            return redirect(url_for('admin.manage_sections', subject_id=subject_id))
+        
+        topics = section.get('topics', [])
+        topic = next((t for t in topics if t['id'] == topic_id), None)
+        if not topic:
+            flash('Topic not found', 'error')
+            return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+        
+        section['topics'] = [t for t in topics if t['id'] != topic_id]
+        
+        if save_subject(subject):
+            flash('Topic deleted successfully', 'success')
+        else:
+            flash('Failed to delete topic', 'error')
+        
         return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
-    
-    section['topics'] = [t for t in topics if t['id'] != topic_id]
-    save_subject(subject)
-    
-    flash('Topic deleted successfully.', 'success')
-    return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
-
-def load_subject_by_id(subject_id):
-    try:
-        with open('data/subject_database.json', 'r') as f:
-            data = json.load(f)
-            subjects = data.get('subjects', [])
-            return next((s for s in subjects if s['id'] == subject_id), None)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return None
-
-def save_subject(subject):
-    try:
-        with open('data/subject_database.json', 'r') as f:
-            data = json.load(f)
-            subjects = data.get('subjects', [])
-        
-        subject_index = next((i for i, s in enumerate(subjects) if s['id'] == subject['id']), -1)
-        if subject_index >= 0:
-            subjects[subject_index] = subject
-        
-        with open('data/subject_database.json', 'w') as f:
-            json.dump({'subjects': subjects}, f, indent=4)
-            
-    except (FileNotFoundError, json.JSONDecodeError):
-        return False
-    return True 
+    except Exception as e:
+        logger.error(f'Error deleting topic: {str(e)}')
+        flash('Error deleting topic', 'error')
+        return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id)) 

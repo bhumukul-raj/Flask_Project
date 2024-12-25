@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Topics - {{ section.name }}</title>
+    <title>Manage Topics - Admin</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 </head>
@@ -22,7 +22,7 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin.users') }}">Manage Users</a>
                     </li>
-                    <li class="nav-item active">
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin.subjects') }}">Manage Subjects</a>
                     </li>
                 </ul>
@@ -58,22 +58,16 @@
 
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
                 <li class="breadcrumb-item"><a href="{{ url_for('admin.subjects') }}">Subjects</a></li>
-                <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_sections', subject_id=subject.id) }}">{{ subject.name }}</a></li>
-                <li class="breadcrumb-item active">{{ section.name }}</li>
+                <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_sections', subject_id=subject.id) }}">{{ subject.name }} - Sections</a></li>
+                <li class="breadcrumb-item active">{{ section.name }} - Topics</li>
             </ol>
         </nav>
 
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">{{ section.name }}</h5>
-                <p class="card-text">{{ section.description }}</p>
-            </div>
-        </div>
-
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Manage Topics</h5>
+                <h5 class="mb-0">Manage Topics - {{ section.name }}</h5>
                 <button class="btn btn-primary" data-toggle="modal" data-target="#addTopicModal">
                     <i class="fas fa-plus"></i> Add Topic
                 </button>
@@ -100,7 +94,7 @@
                                 <td>{{ topic.content_type }}</td>
                                 <td>{{ topic.updated_at }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-info" onclick="editTopic('{{ topic.id }}', '{{ topic.name }}', '{{ topic.description }}', {{ topic.order }}, '{{ topic.content_type }}')" title="Edit Topic">
+                                    <button class="btn btn-sm btn-info" onclick="editTopic('{{ topic.id }}', '{{ topic.name }}', '{{ topic.description }}', '{{ topic.content_type }}', '{{ topic.order }}')" title="Edit Topic">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <button class="btn btn-sm btn-danger" onclick="deleteTopic('{{ topic.id }}')" title="Delete Topic">
@@ -141,14 +135,15 @@
                             <label>Content Type</label>
                             <select class="form-control" name="content_type" required>
                                 <option value="text">Text</option>
+                                <option value="code">Code</option>
+                                <option value="image">Image</option>
                                 <option value="video">Video</option>
-                                <option value="quiz">Quiz</option>
-                                <option value="assignment">Assignment</option>
+                                <option value="file">File</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Order</label>
-                            <input type="number" class="form-control" name="order" value="{{ topics|length + 1 }}" required>
+                            <input type="number" class="form-control" name="order" value="1" min="1" required>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -170,7 +165,7 @@
                         <span>&times;</span>
                     </button>
                 </div>
-                <form action="{{ url_for('admin.edit_topic', subject_id=subject.id, section_id=section.id, topic_id='placeholder') }}" method="POST" id="editTopicForm">
+                <form action="{{ url_for('admin.edit_topic', subject_id=subject.id, section_id=section.id, topic_id='') }}" method="POST" id="editTopicForm">
                     <div class="modal-body">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="form-group">
@@ -185,14 +180,15 @@
                             <label>Content Type</label>
                             <select class="form-control" name="content_type" id="editContentType" required>
                                 <option value="text">Text</option>
+                                <option value="code">Code</option>
+                                <option value="image">Image</option>
                                 <option value="video">Video</option>
-                                <option value="quiz">Quiz</option>
-                                <option value="assignment">Assignment</option>
+                                <option value="file">File</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Order</label>
-                            <input type="number" class="form-control" name="order" id="editOrder" required>
+                            <input type="number" class="form-control" name="order" id="editOrder" min="1" required>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -214,7 +210,7 @@
                         <span>&times;</span>
                     </button>
                 </div>
-                <form action="{{ url_for('admin.delete_topic', subject_id=subject.id, section_id=section.id, topic_id='placeholder') }}" method="POST" id="deleteTopicForm">
+                <form action="{{ url_for('admin.delete_topic', subject_id=subject.id, section_id=section.id, topic_id='') }}" method="POST" id="deleteTopicForm">
                     <div class="modal-body">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <p>Are you sure you want to delete this topic? This action cannot be undone.</p>
@@ -232,17 +228,17 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-        function editTopic(id, name, description, order, contentType) {
+        function editTopic(id, name, description, contentType, order) {
             document.getElementById('editName').value = name;
             document.getElementById('editDescription').value = description;
-            document.getElementById('editOrder').value = order;
             document.getElementById('editContentType').value = contentType;
-            document.getElementById('editTopicForm').action = document.getElementById('editTopicForm').action.replace('placeholder', id);
+            document.getElementById('editOrder').value = order;
+            document.getElementById('editTopicForm').action = `/admin/subjects/{{ subject.id }}/sections/{{ section.id }}/topics/${id}`;
             $('#editTopicModal').modal('show');
         }
 
         function deleteTopic(id) {
-            document.getElementById('deleteTopicForm').action = document.getElementById('deleteTopicForm').action.replace('placeholder', id);
+            document.getElementById('deleteTopicForm').action = `/admin/subjects/{{ subject.id }}/sections/{{ section.id }}/topics/${id}/delete`;
             $('#deleteTopicModal').modal('show');
         }
     </script>

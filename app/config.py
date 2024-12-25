@@ -30,6 +30,7 @@ class Config:
     # CSRF protection
     WTF_CSRF_ENABLED = True
     WTF_CSRF_TIME_LIMIT = 3600  # 1 hour
+    WTF_CSRF_SECRET_KEY = os.environ.get('WTF_CSRF_SECRET_KEY', 'csrf-secret-key')
     
     # Request size limits
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10MB
@@ -50,54 +51,68 @@ class Config:
     LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     LOG_FILE = 'app.log'
     
-    # API settings
-    API_TITLE = 'Learning Platform API'
-    API_VERSION = 'v1'
-    OPENAPI_VERSION = '3.0.2'
-    OPENAPI_URL_PREFIX = '/api/docs'
-    OPENAPI_SWAGGER_UI_PATH = '/swagger'
-    OPENAPI_SWAGGER_UI_URL = 'https://cdn.jsdelivr.net/npm/swagger-ui-dist/'
+    # Security headers
+    TALISMAN_FORCE_HTTPS = True
+    TALISMAN_STRICT_TRANSPORT_SECURITY = True
+    TALISMAN_CONTENT_SECURITY_POLICY = {
+        'default-src': "'self'",
+        'script-src': "'self' 'unsafe-inline' 'unsafe-eval' https://stackpath.bootstrapcdn.com https://code.jquery.com https://cdn.jsdelivr.net",
+        'style-src': "'self' 'unsafe-inline' https://stackpath.bootstrapcdn.com",
+        'font-src': "'self' https://stackpath.bootstrapcdn.com",
+        'img-src': "'self' data: https:",
+    }
 
 class DevelopmentConfig(Config):
     """Development configuration."""
     DEBUG = True
+    ENV = 'development'
+    
+    # Override security settings for development
     JWT_COOKIE_SECURE = False
     SESSION_COOKIE_SECURE = False
-    WTF_CSRF_ENABLED = True
+    TALISMAN_FORCE_HTTPS = False
     
-    # Override rate limiting for development
+    # More permissive rate limiting
     RATELIMIT_DEFAULT = "200/hour"
     
     # More detailed logging
     LOG_LEVEL = 'DEBUG'
+    
+    # Development-specific paths
+    LOG_FILE = 'logs/development.log'
 
 class TestingConfig(Config):
-    """Testing configuration."""
+    """Test configuration."""
     TESTING = True
     DEBUG = True
+    ENV = 'testing'
+    
+    # Disable security features for testing
+    WTF_CSRF_ENABLED = False
     JWT_COOKIE_SECURE = False
     SESSION_COOKIE_SECURE = False
-    WTF_CSRF_ENABLED = False
+    TALISMAN_ENABLED = False
+    
+    # Disable rate limiting for tests
+    RATELIMIT_ENABLED = False
     
     # Use memory cache for testing
     CACHE_TYPE = 'null'
     
-    # Use a separate data directory for tests
+    # Test-specific paths
     DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'tests', 'data')
-    
-    # Disable rate limiting for tests
-    RATELIMIT_ENABLED = False
+    LOG_FILE = 'logs/testing.log'
 
 class ProductionConfig(Config):
     """Production configuration."""
+    ENV = 'production'
+    
     # Ensure all security features are enabled
     DEBUG = False
     TESTING = False
     
-    # Use Redis for rate limiting in production
+    # Use Redis for rate limiting and caching in production
     RATELIMIT_STORAGE_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-    
-    # Use Redis for caching in production
     CACHE_TYPE = 'redis'
     CACHE_REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/1')
     
