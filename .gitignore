@@ -1,5 +1,5 @@
 ﻿venv/
 __pycache__/
 *.pyc
-.env
-data/*.json
+#.env
+#data/*.json
