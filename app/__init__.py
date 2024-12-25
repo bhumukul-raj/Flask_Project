@@ -55,7 +55,10 @@ def create_app(config_name='development'):
     
     # Register blueprints
     from .routes import auth, main
+    from .admin import admin
+    
     app.register_blueprint(auth)
     app.register_blueprint(main)
+    app.register_blueprint(admin)
     
     return app

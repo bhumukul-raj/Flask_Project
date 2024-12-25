@@ -227,7 +227,7 @@ def login():
         flash('Login successful!', 'success')
         # Redirect admin users to admin dashboard, regular users to user dashboard
         if user.is_admin():
-            return redirect(url_for('main.dashboard'))
+            return redirect(url_for('admin.dashboard'))
         else:
             return redirect(url_for('main.dashboard'))
         
@@ -278,7 +278,7 @@ def logout():
 @login_required
 def dashboard():
     """User dashboard."""
-    return render_template('dashboard.html')
+    return render_template('dashboard/dashboard.html')
 
 @auth.route('/generate_hash/<password>')
 def generate_hash(password):
