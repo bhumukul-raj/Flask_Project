@@ -1,0 +1,20 @@
+{
+  "users": [
+    {
+      "id": "admin-user-001",
+      "username": "admin123",
+      "password": "pbkdf2:sha256:600000$WF9UB8zog1UrkgFc$6a1c0ff16d4688660ea2376a3cea5743011a4c3ca4414ccf711d77f7b5e6ad95",
+      "role": "admin",
+      "created_at": "2024-03-25T10:00:00Z",
+      "last_login": "2024-12-25T06:33:17.982555+00:00"
+    },
+    {
+      "id": "6f796515-c14f-41d4-9922-30f518486f30",
+      "username": "student",
+      "password": "pbkdf2:sha256:600000$HwgneViDg79wVmnG$5ba8d783d75ed8e87c94d326603e35dc942ce9d2be8752c08d1f0eb17fb89175",
+      "role": "user",
+      "created_at": "2024-12-25T06:31:33.342501+00:00",
+      "last_login": "2024-12-25T06:33:58.019314+00:00"
+    }
+  ]
+}
