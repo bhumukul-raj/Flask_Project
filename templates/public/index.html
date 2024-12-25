@@ -3,8 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All Subjects - Learning Platform</title>
+    <title>Learning Platform</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4rem 0;
+            margin-bottom: 2rem;
+        }
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: bold;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+        }
+        .subject-card {
+            transition: transform 0.3s ease;
+        }
+        .subject-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -16,28 +39,46 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ml-auto">
                     {% if current_user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
-                        </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
+                            <i class="fas fa-user"></i> {{ current_user.username }}
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
-                        </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </li>
                     {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <h1 class="mb-4">All Subjects</h1>
+    <div class="hero">
+        <div class="container text-center">
+            <h1>Welcome to Learning Platform</h1>
+            <p class="lead">Discover a world of knowledge with our comprehensive learning resources.</p>
+            {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('auth.login') }}" class="btn btn-light btn-lg">
+                <i class="fas fa-sign-in-alt"></i> Get Started
+            </a>
+            {% endif %}
+        </div>
+    </div>
 
+    <div class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -51,31 +92,45 @@
             {% endif %}
         {% endwith %}
 
+        <h2 class="mb-4">Available Subjects</h2>
         <div class="row">
             {% for subject in subjects %}
             <div class="col-md-4 mb-4">
-                <div class="card h-100">
+                <div class="card subject-card h-100">
                     <div class="card-body">
                         <h5 class="card-title">{{ subject.name }}</h5>
                         <p class="card-text">{{ subject.description }}</p>
-                        <div class="mt-auto">
-                            <a href="{{ url_for('main.subject_detail', subject_id=subject.id) }}" class="btn btn-primary">View Details</a>
-                        </div>
+                        <a href="{{ url_for('main.subject_detail', subject_id=subject.id) }}" class="btn btn-primary">
+                            <i class="fas fa-book-open"></i> Learn More
+                        </a>
                     </div>
-                    <div class="card-footer text-muted">
-                        {{ subject.sections|length }} sections
-                    </div>
-                </div>
-            </div>
-            {% else %}
-            <div class="col-12">
-                <div class="alert alert-info">
-                    No subjects available at the moment.
                 </div>
             </div>
             {% endfor %}
         </div>
     </div>
+
+    <footer class="bg-dark text-white mt-5">
+        <div class="container py-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Learning Platform</h5>
+                    <p>Empowering learners worldwide with quality education.</p>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('main.home') }}" class="text-white">Home</a></li>
+                        {% if current_user.is_authenticated %}
+                        <li><a href="{{ url_for('main.dashboard') }}" class="text-white">Dashboard</a></li>
+                        {% else %}
+                        <li><a href="{{ url_for('auth.login') }}" class="text-white">Login</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>

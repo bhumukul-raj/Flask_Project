@@ -79,7 +79,6 @@
                             <tr>
                                 <th>Order</th>
                                 <th>Name</th>
-                                <th>Description</th>
                                 <th>Content Type</th>
                                 <th>Last Updated</th>
                                 <th>Actions</th>
@@ -90,18 +89,69 @@
                             <tr>
                                 <td>{{ topic.order }}</td>
                                 <td>{{ topic.name }}</td>
-                                <td>{{ topic.description[:100] }}...</td>
                                 <td>{{ topic.content_type }}</td>
                                 <td>{{ topic.updated_at }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-info" onclick="editTopic('{{ topic.id }}', '{{ topic.name }}', '{{ topic.description }}', '{{ topic.content_type }}', '{{ topic.order }}')" title="Edit Topic">
+                                    <button class="btn btn-sm btn-info" onclick="editTopic('{{ topic.id }}', '{{ topic.name }}', '{{ topic.order }}')" title="Edit Topic">
                                         <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-success" onclick="manageContent('{{ topic.id }}')" title="Manage Content">
+                                        <i class="fas fa-file-alt"></i>
                                     </button>
                                     <button class="btn btn-sm btn-danger" onclick="deleteTopic('{{ topic.id }}')" title="Delete Topic">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </td>
                             </tr>
+                            {% if topic.content_blocks %}
+                            <tr class="content-blocks-row" id="content-blocks-{{ topic.id }}" style="display: none;">
+                                <td colspan="5">
+                                    <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Content Blocks - {{ topic.name }}</h6>
+                                            <button class="btn btn-sm btn-primary" onclick="addContentBlock('{{ topic.id }}')" title="Add Content Block">
+                                                <i class="fas fa-plus"></i> Add Block
+                                            </button>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="list-group">
+                                                {% for block in topic.content_blocks %}
+                                                <div class="list-group-item">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <span class="badge badge-primary">{{ block.type }}</span>
+                                                            {% if block.type == 'text' %}
+                                                                <span class="ml-2">{{ block.value[:100] }}...</span>
+                                                            {% elif block.type == 'code' %}
+                                                                <span class="ml-2">{{ block.value[:100] }}...</span>
+                                                            {% elif block.type == 'image' %}
+                                                                <span class="ml-2">Image: {{ block.value.caption }}</span>
+                                                            {% elif block.type == 'table' %}
+                                                                <span class="ml-2">Table: {{ block.value.headers|length }} columns</span>
+                                                            {% endif %}
+                                                        </div>
+                                                        <div>
+                                                            <button class="btn btn-sm btn-info" onclick="editContentBlock(this)" 
+                                                                    data-topic-id="{{ topic.id }}"
+                                                                    data-block-id="{{ block.id }}"
+                                                                    data-block-type="{{ block.type }}"
+                                                                    data-block-value='{{ block.value|tojson|safe }}'
+                                                                    title="Edit Block">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button class="btn btn-sm btn-danger" onclick="deleteContentBlock('{{ topic.id }}', '{{ block.id }}')" title="Delete Block">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
                             {% endfor %}
                         </tbody>
                     </table>
@@ -126,20 +176,6 @@
                         <div class="form-group">
                             <label>Name</label>
                             <input type="text" class="form-control" name="name" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea class="form-control" name="description" rows="3" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Content Type</label>
-                            <select class="form-control" name="content_type" required>
-                                <option value="text">Text</option>
-                                <option value="code">Code</option>
-                                <option value="image">Image</option>
-                                <option value="video">Video</option>
-                                <option value="file">File</option>
-                            </select>
                         </div>
                         <div class="form-group">
                             <label>Order</label>
@@ -171,20 +207,6 @@
                         <div class="form-group">
                             <label>Name</label>
                             <input type="text" class="form-control" name="name" id="editName" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea class="form-control" name="description" id="editDescription" rows="3" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Content Type</label>
-                            <select class="form-control" name="content_type" id="editContentType" required>
-                                <option value="text">Text</option>
-                                <option value="code">Code</option>
-                                <option value="image">Image</option>
-                                <option value="video">Video</option>
-                                <option value="file">File</option>
-                            </select>
                         </div>
                         <div class="form-group">
                             <label>Order</label>
@@ -224,14 +246,126 @@
         </div>
     </div>
 
+    <!-- Add Content Block Modal -->
+    <div class="modal fade" id="addContentBlockModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Content Block</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <form action="" method="POST" id="addContentBlockForm">
+                    <div class="modal-body">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-group">
+                            <label>Content Type</label>
+                            <select class="form-control" name="type" id="contentBlockType" onchange="toggleContentFields()" required>
+                                <option value="text">Text</option>
+                                <option value="code">Code</option>
+                                <option value="image">Image</option>
+                                <option value="table">Table</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Text/Code Content -->
+                        <div class="form-group content-field" id="textContent">
+                            <label>Content</label>
+                            <textarea class="form-control" name="value" rows="5"></textarea>
+                        </div>
+                        
+                        <!-- Image Content -->
+                        <div class="form-group content-field" id="imageContent" style="display: none;">
+                            <label>Image URL</label>
+                            <input type="text" class="form-control" name="image_url">
+                            <label>Caption</label>
+                            <input type="text" class="form-control" name="image_caption">
+                            <label>Alt Text</label>
+                            <input type="text" class="form-control" name="image_alt">
+                        </div>
+                        
+                        <!-- Table Content -->
+                        <div class="form-group content-field" id="tableContent" style="display: none;">
+                            <label>Headers (comma-separated)</label>
+                            <input type="text" class="form-control" name="table_headers">
+                            <label>Rows (one per line, columns separated by commas)</label>
+                            <textarea class="form-control" name="table_rows" rows="5"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Block</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Content Block Modal -->
+    <div class="modal fade" id="editContentBlockModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Content Block</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <form action="" method="POST" id="editContentBlockForm">
+                    <div class="modal-body">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <!-- Content Type Selector -->
+                        <div class="form-group">
+                            <label>Content Type</label>
+                            <select class="form-control" name="type" id="editBlockType" onchange="toggleEditContentFields()" required>
+                                <option value="text">Text</option>
+                                <option value="code">Code</option>
+                                <option value="image">Image</option>
+                                <option value="table">Table</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Text/Code Content -->
+                        <div class="form-group content-field" id="editTextContent">
+                            <label>Content</label>
+                            <textarea class="form-control" name="value" id="editTextValue" rows="5"></textarea>
+                        </div>
+                        
+                        <!-- Image Content -->
+                        <div class="form-group content-field" id="editImageContent" style="display: none;">
+                            <label>Image URL</label>
+                            <input type="text" class="form-control" name="image_url" id="editImageUrl">
+                            <label>Caption</label>
+                            <input type="text" class="form-control" name="image_caption" id="editImageCaption">
+                            <label>Alt Text</label>
+                            <input type="text" class="form-control" name="image_alt" id="editImageAlt">
+                        </div>
+                        
+                        <!-- Table Content -->
+                        <div class="form-group content-field" id="editTableContent" style="display: none;">
+                            <label>Headers (comma-separated)</label>
+                            <input type="text" class="form-control" name="table_headers" id="editTableHeaders">
+                            <label>Rows (one per line, columns separated by commas)</label>
+                            <textarea class="form-control" name="table_rows" id="editTableRows" rows="5"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-        function editTopic(id, name, description, contentType, order) {
+        function editTopic(id, name, order) {
             document.getElementById('editName').value = name;
-            document.getElementById('editDescription').value = description;
-            document.getElementById('editContentType').value = contentType;
             document.getElementById('editOrder').value = order;
             document.getElementById('editTopicForm').action = `/admin/subjects/{{ subject.id }}/sections/{{ section.id }}/topics/${id}`;
             $('#editTopicModal').modal('show');
@@ -240,6 +374,245 @@
         function deleteTopic(id) {
             document.getElementById('deleteTopicForm').action = `/admin/subjects/{{ subject.id }}/sections/{{ section.id }}/topics/${id}/delete`;
             $('#deleteTopicModal').modal('show');
+        }
+
+        function manageContent(topicId) {
+            const row = document.getElementById(`content-blocks-${topicId}`);
+            if (row) {
+                row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+            }
+        }
+
+        function addContentBlock(topicId) {
+            document.getElementById('addContentBlockForm').action = `/admin/subjects/{{ subject.id }}/sections/{{ section.id }}/topics/${topicId}/content`;
+            $('#addContentBlockModal').modal('show');
+        }
+
+        function deleteContentBlock(topicId, blockId) {
+            if (confirm('Are you sure you want to delete this content block?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/admin/subjects/{{ subject.id }}/sections/{{ section.id }}/topics/${topicId}/content/${blockId}/delete`;
+                
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = 'csrf_token';
+                csrf.value = '{{ csrf_token() }}';
+                form.appendChild(csrf);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function toggleContentFields() {
+            const type = document.getElementById('contentBlockType').value;
+            
+            // Hide all content fields
+            document.querySelectorAll('#addContentBlockModal .content-field').forEach(field => {
+                field.style.display = 'none';
+            });
+            
+            // Show the appropriate field
+            if (type === 'text' || type === 'code') {
+                document.getElementById('textContent').style.display = 'block';
+            } else if (type === 'image') {
+                document.getElementById('imageContent').style.display = 'block';
+            } else if (type === 'table') {
+                document.getElementById('tableContent').style.display = 'block';
+            }
+        }
+
+        function toggleEditContentFields() {
+            const typeSelect = document.getElementById('editBlockType');
+            const newType = typeSelect.value;
+            const originalType = typeSelect.dataset.originalType;
+            const originalValue = typeSelect.dataset.originalValue;
+            
+            // Hide all content fields
+            document.querySelectorAll('#editContentBlockModal .content-field').forEach(field => {
+                field.style.display = 'none';
+            });
+            
+            try {
+                // If type has changed, handle conversion
+                if (newType !== originalType && originalValue) {
+                    let convertedValue;
+                    const value = JSON.parse(originalValue);
+                    
+                    if ((originalType === 'text' || originalType === 'code') && newType === 'table') {
+                        // Convert text to table
+                        const lines = value.split('\n');
+                        convertedValue = {
+                            headers: ['Column 1', 'Column 2'],
+                            rows: [['Data', lines[0] || '']]
+                        };
+                        document.getElementById('editTableHeaders').value = convertedValue.headers.join(',');
+                        document.getElementById('editTableRows').value = convertedValue.rows.map(row => row.join(',')).join('\n');
+                    } else if ((originalType === 'text' || originalType === 'code') && newType === 'image') {
+                        // Convert text to image
+                        convertedValue = {
+                            url: '',
+                            caption: value.substring(0, 100),
+                            alt_text: value.substring(0, 100)
+                        };
+                        document.getElementById('editImageUrl').value = convertedValue.url;
+                        document.getElementById('editImageCaption').value = convertedValue.caption;
+                        document.getElementById('editImageAlt').value = convertedValue.alt_text;
+                    } else if (originalType === 'table' && (newType === 'text' || newType === 'code')) {
+                        // Convert table to text
+                        const headers = value.headers.join(' | ');
+                        const rows = value.rows.map(row => row.join(' | ')).join('\n');
+                        convertedValue = `${headers}\n${rows}`;
+                        document.getElementById('editTextValue').value = convertedValue;
+                    } else if (originalType === 'image' && (newType === 'text' || newType === 'code')) {
+                        // Convert image to text
+                        convertedValue = `Image: ${value.caption}\nURL: ${value.url}`;
+                        document.getElementById('editTextValue').value = convertedValue;
+                    }
+                }
+            } catch (e) {
+                console.error('Error converting content:', e);
+            }
+            
+            // Show the appropriate field
+            if (newType === 'text' || newType === 'code') {
+                document.getElementById('editTextContent').style.display = 'block';
+            } else if (newType === 'image') {
+                document.getElementById('editImageContent').style.display = 'block';
+            } else if (newType === 'table') {
+                document.getElementById('editTableContent').style.display = 'block';
+            }
+        }
+
+        // Handle form submissions for complex content types
+        document.getElementById('addContentBlockForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const type = document.getElementById('contentBlockType').value;
+            let value = '';
+            
+            if (type === 'text' || type === 'code') {
+                value = this.querySelector('[name="value"]').value;
+            } else if (type === 'image') {
+                const imageData = {
+                    url: this.image_url.value.trim(),
+                    caption: this.image_caption.value.trim(),
+                    alt_text: this.image_alt.value.trim()
+                };
+                value = JSON.stringify(imageData);
+            } else if (type === 'table') {
+                const headers = this.table_headers.value.split(',').map(h => h.trim()).filter(h => h);
+                const rows = this.table_rows.value.split('\n')
+                    .map(row => row.split(',').map(cell => cell.trim()))
+                    .filter(row => row.some(cell => cell));
+                const tableData = {
+                    headers: headers,
+                    rows: rows
+                };
+                value = JSON.stringify(tableData);
+            }
+            
+            // Create a hidden input for the value
+            const valueInput = document.createElement('input');
+            valueInput.type = 'hidden';
+            valueInput.name = 'value';
+            valueInput.value = value;
+            this.appendChild(valueInput);
+            
+            this.submit();
+        });
+
+        document.getElementById('editContentBlockForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const type = document.getElementById('editBlockType').value;
+            let value = '';
+            
+            try {
+                if (type === 'text' || type === 'code') {
+                    value = document.getElementById('editTextValue').value;
+                } else if (type === 'image') {
+                    const imageData = {
+                        url: this.querySelector('#editImageUrl').value.trim(),
+                        caption: this.querySelector('#editImageCaption').value.trim(),
+                        alt_text: this.querySelector('#editImageAlt').value.trim()
+                    };
+                    value = JSON.stringify(imageData);
+                } else if (type === 'table') {
+                    const headers = this.querySelector('#editTableHeaders').value.split(',').map(h => h.trim()).filter(h => h);
+                    const rows = this.querySelector('#editTableRows').value.split('\n')
+                        .map(row => row.split(',').map(cell => cell.trim()))
+                        .filter(row => row.some(cell => cell));
+                    const tableData = {
+                        headers: headers,
+                        rows: rows
+                    };
+                    value = JSON.stringify(tableData);
+                }
+                
+                // Create hidden inputs for both type and value
+                const typeInput = document.createElement('input');
+                typeInput.type = 'hidden';
+                typeInput.name = 'type';
+                typeInput.value = type;
+                this.appendChild(typeInput);
+                
+                const valueInput = document.createElement('input');
+                valueInput.type = 'hidden';
+                valueInput.name = 'value';
+                valueInput.value = value;
+                this.appendChild(valueInput);
+                
+                this.submit();
+            } catch (e) {
+                console.error('Error submitting form:', e);
+                alert('Error saving content block. Please try again.');
+            }
+        });
+
+        function editContentBlock(button) {
+            const topicId = button.dataset.topicId;
+            const blockId = button.dataset.blockId;
+            const blockType = button.dataset.blockType;
+            const blockValue = JSON.parse(button.dataset.blockValue);
+            
+            const form = document.getElementById('editContentBlockForm');
+            form.action = `/admin/subjects/{{ subject.id }}/sections/{{ section.id }}/topics/${topicId}/content/${blockId}`;
+            
+            // Set the block type and store the original type
+            const typeSelect = document.getElementById('editBlockType');
+            typeSelect.value = blockType;
+            typeSelect.dataset.originalType = blockType;
+            
+            try {
+                // Hide all content fields first
+                document.querySelectorAll('#editContentBlockModal .content-field').forEach(field => {
+                    field.style.display = 'none';
+                });
+                
+                // Store the original value for conversion if needed
+                typeSelect.dataset.originalValue = JSON.stringify(blockValue);
+                
+                // Show and populate the appropriate field based on current type
+                if (blockType === 'text' || blockType === 'code') {
+                    document.getElementById('editTextContent').style.display = 'block';
+                    document.getElementById('editTextValue').value = blockValue;
+                } else if (blockType === 'image') {
+                    document.getElementById('editImageContent').style.display = 'block';
+                    document.getElementById('editImageUrl').value = blockValue.url || '';
+                    document.getElementById('editImageCaption').value = blockValue.caption || '';
+                    document.getElementById('editImageAlt').value = blockValue.alt_text || '';
+                } else if (blockType === 'table') {
+                    document.getElementById('editTableContent').style.display = 'block';
+                    document.getElementById('editTableHeaders').value = (blockValue.headers || []).join(',');
+                    document.getElementById('editTableRows').value = (blockValue.rows || []).map(row => row.join(',')).join('\n');
+                }
+                
+                $('#editContentBlockModal').modal('show');
+            } catch (e) {
+                console.error('Error processing block value:', e);
+                console.error('Block value:', button.dataset.blockValue);
+                alert('Error loading content block. Please try again.');
+            }
         }
     </script>
 </body>

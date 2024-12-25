@@ -5,6 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ subject.name }} - Learning Platform</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .section-card {
+            transition: transform 0.3s ease;
+        }
+        .section-card:hover {
+            transform: translateY(-5px);
+        }
+        .topic-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        .topic-list li {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .topic-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -14,24 +34,33 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ml-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.subjects') }}">All Subjects</a>
-                    </li>
+                <ul class="navbar-nav mr-auto">
                     {% if current_user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
-                        </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
+                            <i class="fas fa-user"></i> {{ current_user.username }}
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
-                        </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </li>
                     {% endif %}
                 </ul>
             </div>
@@ -52,31 +81,45 @@
             {% endif %}
         {% endwith %}
 
-        <h1 class="mb-4">{{ subject.name }}</h1>
-        <p class="lead">{{ subject.description }}</p>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Home</a></li>
+                <li class="breadcrumb-item active">{{ subject.name }}</li>
+            </ol>
+        </nav>
 
-        <div class="mt-4">
-            <h2>Sections</h2>
-            <div class="list-group">
-                {% for section in subject.sections %}
-                    <div class="list-group-item">
-                        <h5 class="mb-1">{{ section.name }}</h5>
-                        <p class="mb-1">{{ section.description }}</p>
-                        {% if section.topics %}
-                            <small>Topics:</small>
-                            <ul class="list-unstyled ml-3">
-                                {% for topic in section.topics %}
-                                    <li>{{ topic.name }}</li>
-                                {% endfor %}
-                            </ul>
-                        {% endif %}
-                    </div>
-                {% else %}
-                    <div class="list-group-item">
-                        <p class="mb-0">No sections available yet.</p>
-                    </div>
-                {% endfor %}
+        <div class="row">
+            <div class="col-md-8">
+                <h1>{{ subject.name }}</h1>
+                <p class="lead">{{ subject.description }}</p>
             </div>
+            <div class="col-md-4 text-right">
+                <p class="text-muted">
+                    <i class="fas fa-clock"></i> Last updated: {{ subject.updated_at }}
+                </p>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            {% for section in subject.sections|sort(attribute='order') %}
+            <div class="col-md-6 mb-4">
+                <div class="card section-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ section.name }}</h5>
+                        <p class="card-text">{{ section.description }}</p>
+                        
+                        <h6 class="mt-4">Topics:</h6>
+                        <ul class="topic-list">
+                            {% for topic in section.topics|sort(attribute='order') %}
+                            <li>
+                                <i class="fas fa-book"></i> {{ topic.name }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 

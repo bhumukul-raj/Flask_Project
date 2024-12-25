@@ -692,20 +692,19 @@ def add_topic(subject_id, section_id):
         
         name = request.form.get('name')
         description = request.form.get('description')
-        content_type = request.form.get('content_type')
         order = int(request.form.get('order', 1))
         
-        if not all([name, description, content_type]):
-            flash('All fields are required', 'error')
+        if not name or not description:
+            flash('Name and description are required', 'error')
             return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
         
         new_topic = {
             'id': str(uuid.uuid4()),
             'name': name,
             'description': description,
-            'content_type': content_type,
+            'content_type': 'mixed',  # Default to mixed since we support multiple content types
             'order': order,
-            'content': '',
+            'content_blocks': [],  # Initialize empty content blocks array
             'created_at': datetime.utcnow().isoformat(),
             'updated_at': datetime.utcnow().isoformat()
         }
@@ -723,6 +722,154 @@ def add_topic(subject_id, section_id):
     except Exception as e:
         logger.error(f'Error adding topic: {str(e)}')
         flash('Error adding topic', 'error')
+        return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+
+def convert_block_value(old_type, new_type, value):
+    """Convert block value from one type to another."""
+    try:
+        # If value is a string and new type expects JSON
+        if isinstance(value, str) and new_type in ['table', 'image']:
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError:
+                # If string can't be parsed as JSON, create default structure
+                if new_type == 'table':
+                    value = {
+                        'headers': ['Column 1', 'Column 2'],
+                        'rows': [['Data', value[:100]]]  # Use old value as data
+                    }
+                elif new_type == 'image':
+                    value = {
+                        'url': '',
+                        'caption': value[:100],  # Use old value as caption
+                        'alt_text': value[:100]  # Use old value as alt text
+                    }
+        
+        # If value is JSON and new type expects string
+        elif isinstance(value, dict) and new_type in ['text', 'code']:
+            if old_type == 'table':
+                # Convert table to text representation
+                headers = ' | '.join(value.get('headers', []))
+                rows = [' | '.join(row) for row in value.get('rows', [])]
+                value = headers + '\n' + '\n'.join(rows)
+            elif old_type == 'image':
+                # Convert image to text representation
+                value = f"Image: {value.get('caption', '')}\nURL: {value.get('url', '')}"
+        
+        return value
+    except Exception as e:
+        logger.error(f'Error converting block value: {str(e)}')
+        return value
+
+@admin.route('/subjects/<subject_id>/sections/<section_id>/topics/<topic_id>/content/<block_id>', methods=['POST'])
+@login_required
+@admin_required
+def edit_content_block(subject_id, section_id, topic_id, block_id):
+    """Edit a content block."""
+    try:
+        subject = load_subject_by_id(subject_id)
+        if not subject:
+            flash('Subject not found', 'error')
+            return redirect(url_for('admin.subjects'))
+        
+        section = next((s for s in subject.get('sections', []) if s['id'] == section_id), None)
+        if not section:
+            flash('Section not found', 'error')
+            return redirect(url_for('admin.manage_sections', subject_id=subject_id))
+        
+        topic = next((t for t in section.get('topics', []) if t['id'] == topic_id), None)
+        if not topic:
+            flash('Topic not found', 'error')
+            return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+        
+        block = next((b for b in topic.get('content_blocks', []) if b['id'] == block_id), None)
+        if not block:
+            flash('Content block not found', 'error')
+            return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+        
+        block_type = request.form.get('type')
+        block_value = request.form.get('value')
+        
+        if not block_type or not block_value:
+            flash('Type and value are required', 'error')
+            return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+        
+        # Validate block type
+        if block_type not in ['text', 'code', 'image', 'table']:
+            flash('Invalid content type', 'error')
+            return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+        
+        # Handle type conversion
+        if block_type != block['type']:
+            block_value = convert_block_value(block['type'], block_type, block_value)
+        
+        # Handle table and image types which expect JSON objects
+        if block_type in ['table', 'image']:
+            try:
+                if isinstance(block_value, str):
+                    block_value = json.loads(block_value)
+                
+                # Validate structure
+                if block_type == 'table' and not all(key in block_value for key in ['headers', 'rows']):
+                    raise ValueError('Invalid table structure')
+                elif block_type == 'image' and not all(key in block_value for key in ['url', 'caption', 'alt_text']):
+                    raise ValueError('Invalid image structure')
+                    
+            except (json.JSONDecodeError, ValueError) as e:
+                flash('Invalid format for content type', 'error')
+                return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+        
+        # Update the block
+        block['type'] = block_type
+        block['value'] = block_value
+        block['updated_at'] = datetime.utcnow().isoformat()
+        topic['updated_at'] = datetime.utcnow().isoformat()
+        
+        if save_subject(subject):
+            flash('Content block updated successfully', 'success')
+        else:
+            flash('Failed to update content block', 'error')
+        
+        return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+    except Exception as e:
+        logger.error(f'Error updating content block: {str(e)}')
+        flash('Error updating content block', 'error')
+        return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+
+@admin.route('/subjects/<subject_id>/sections/<section_id>/topics/<topic_id>/content/<block_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_content_block(subject_id, section_id, topic_id, block_id):
+    """Delete a content block."""
+    try:
+        subject = load_subject_by_id(subject_id)
+        if not subject:
+            flash('Subject not found', 'error')
+            return redirect(url_for('admin.subjects'))
+        
+        section = next((s for s in subject.get('sections', []) if s['id'] == section_id), None)
+        if not section:
+            flash('Section not found', 'error')
+            return redirect(url_for('admin.manage_sections', subject_id=subject_id))
+        
+        topic = next((t for t in section.get('topics', []) if t['id'] == topic_id), None)
+        if not topic:
+            flash('Topic not found', 'error')
+            return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+        
+        # Remove the content block
+        topic['content_blocks'] = [b for b in topic.get('content_blocks', []) if b['id'] != block_id]
+        topic['updated_at'] = datetime.utcnow().isoformat()
+        
+        if save_subject(subject):
+            flash('Content block deleted successfully', 'success')
+        else:
+            flash('Failed to delete content block', 'error')
+        
+        return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
+    except Exception as e:
+        logger.error(f'Error deleting content block: {str(e)}')
+        flash('Error deleting content block', 'error')
         return redirect(url_for('admin.manage_topics', subject_id=subject_id, section_id=section_id))
 
 @admin.route('/subjects/<subject_id>/sections/<section_id>/topics/<topic_id>', methods=['POST'])
