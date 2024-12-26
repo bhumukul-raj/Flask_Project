@@ -30,9 +30,9 @@ Flask_Project/
 ## Quick Start
 
 1. **Install Dependencies**:
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 2. **Initialize the Project**:
 ```bash
@@ -45,7 +45,7 @@ python run.py run
 ```
 
 ### Custom Server Options
-```bash
+   ```bash
 # Change host and port
 python run.py run --host=0.0.0.0 --port=8000
 
@@ -100,7 +100,7 @@ DATABASE_URL=sqlite:///app.db
 
 # Logging
 LOG_LEVEL=DEBUG
-```
+   ```
 
 ## Security Features
 
@@ -601,4 +601,124 @@ tail -f logs/development.log
    - Verify user role in database
    - Check permission settings
    - Review access logs
+
+## Template Structure
+
+The application uses a well-organized template structure divided into different sections:
+
+### Admin Templates (`/templates/admin/`)
+
+1. **admin_dashboard.html**
+   - Main admin control panel interface
+   - Statistics cards (Users, Subjects, Sessions)
+   - Recent User Activity panel
+   - System Status monitoring
+   - Active Sessions management
+
+2. **manage_users.html**
+   - User management interface
+   - CRUD operations for users
+   - Role management
+   - Password management
+   - User status tracking
+
+3. **manage_subjects.html**
+   - Subject management interface
+   - Subject CRUD operations
+   - Section management integration
+   - Content organization
+
+4. **manage_sections.html**
+   - Section management within subjects
+   - Ordering system
+   - Topic integration
+   - Content organization
+
+5. **manage_topics.html**
+   - Topic management within sections
+   - Content block management
+   - Multiple content types support
+   - Topic ordering system
+
+### Authentication Templates (`/templates/auth/`)
+
+1. **login.html**
+   - User login interface
+   - Form validation
+   - Error handling
+   - Registration redirect
+
+2. **register.html**
+   - User registration interface
+   - Form validation
+   - Password requirements
+   - Login redirect
+
+### Dashboard Templates (`/templates/dashboard/`)
+
+1. **dashboard.html**
+   - User dashboard interface
+   - Profile overview
+   - Recent activity tracking
+   - Navigation menu
+
+### Error Templates (`/templates/errors/`)
+
+1. **error.html**
+   - Centralized error handling
+   - Custom error pages
+   - User-friendly messages
+   - Navigation recovery
+
+### Public Templates (`/templates/public/`)
+
+1. **home.html**
+   - Main landing page
+   - Feature highlights
+   - Call-to-action elements
+   - User onboarding
+
+2. **index.html**
+   - Alternative landing page
+   - Subject catalog
+   - Authentication integration
+   - Modern design elements
+
+3. **subject_detail.html**
+   - Subject information display
+   - Section organization
+   - Topic listing
+   - Learning path visualization
+
+### Common Features
+
+1. **Navigation**
+   - Consistent top navigation bar
+   - User dropdown menu
+   - Breadcrumb navigation
+   - Mobile-responsive menu
+
+2. **Security**
+   - CSRF protection
+   - Authentication checks
+   - Role-based access
+   - Form validation
+
+3. **UI Components**
+   - Bootstrap 4.5.2
+   - Font Awesome 5.15.4
+   - Modal dialogs
+   - Responsive cards
+
+4. **Error Handling**
+   - Flash messages
+   - Form validation
+   - Error states
+   - User feedback
+
+5. **Styling**
+   - Custom animations
+   - Consistent theming
+   - Mobile-first design
+   - Accessibility features
 
