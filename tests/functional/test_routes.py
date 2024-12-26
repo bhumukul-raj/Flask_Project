@@ -1,4 +1,13 @@
-﻿"""Test all application routes."""
+"""
+Functional Tests for Routes
+
+Tests all application routes and their responses.
+Verifies that routes:
+1. Are accessible
+2. Return correct status codes
+3. Handle authentication properly
+4. Process dynamic parameters
+"""
 
 import pytest
 from flask import url_for
@@ -59,7 +68,6 @@ class TestAuthenticatedRoutes:
     @pytest.fixture
     def auth_client(self, client):
         """Create authenticated client."""
-        # Login process
         data = {
             'email': 'test@example.com',
             'password': 'test_password'
@@ -82,7 +90,6 @@ class TestAdminRoutes:
     @pytest.fixture
     def admin_client(self, client):
         """Create admin authenticated client."""
-        # Admin login process
         data = {
             'email': 'admin@example.com',
             'password': 'admin_password'
@@ -106,7 +113,6 @@ class TestAPIRoutes:
     @pytest.fixture
     def api_client(self, client):
         """Create API authenticated client."""
-        # Get JWT token
         data = {
             'email': 'api@example.com',
             'password': 'api_password'
@@ -142,4 +148,4 @@ def test_dynamic_routes(client):
     
     for path, desc in routes:
         response = client.get(path)
-        assert response.status_code in [200, 302, 401, 404], f"Failed: {desc} ({path})"
+        assert response.status_code in [200, 302, 401, 404], f"Failed: {desc} ({path})" 

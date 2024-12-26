@@ -3,10 +3,22 @@
         {
             "id": "1e11f8a4-e8da-414a-818b-8318eb56b7d0",
             "username": "admin123",
+            "email": "admin@example.com",
             "password": "pbkdf2:sha256:600000$vLIiQp0ojSgFMOcC$129df16d3328a25c325c48508ff341f6947b0b1815c75ff9d174907295ef5f34",
             "role": "admin",
             "created_at": "2024-12-25T17:59:31.266547+00:00",
-            "last_login": "2024-12-25T19:27:41.145416+00:00"
+            "last_login": "2024-12-26T05:09:34.331845+00:00",
+            "is_active": true,
+            "settings": {
+                "notifications_enabled": true,
+                "two_factor_enabled": false
+            },
+            "permissions": [
+                "manage_users",
+                "manage_content",
+                "view_analytics",
+                "manage_settings"
+            ]
         }
     ]
 }

@@ -10,7 +10,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_login import LoginManager, user_loaded_from_request
 from flask_wtf.csrf import CSRFProtect
-from .config import config
+from config.config import config
 from .services.data_service import load_data
 from .services.session_service import track_session
 from .models import User
