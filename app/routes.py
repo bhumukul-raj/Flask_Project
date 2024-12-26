@@ -73,7 +73,7 @@ def subjects():
     """List all subjects. Only accessible to authenticated users."""
     subjects_data = load_data('subject_database.json')
     subjects = subjects_data.get('subjects', [])
-    return render_template('public/index.html', subjects=subjects)
+    return render_template('public/subjects.html', subjects=subjects)
 
 @main.route('/subject/<subject_id>')
 @login_required

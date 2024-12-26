@@ -168,7 +168,7 @@ def dashboard():
                 })
         
         logger.info(f'Admin dashboard accessed by {current_user.username}')
-        return render_template('admin/admin_dashboard.html',
+        return render_template('admin/admin_panel.html',
                              user_count=user_count,
                              subject_count=subject_count,
                              active_sessions=active_sessions,
