@@ -36,7 +36,7 @@ def load_user(user_id):
 
 def create_app(config_name='development'):
     """Create and configure the Flask application."""
-    template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+    template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
     app = Flask(__name__, template_folder=template_dir)
     app.config.from_object(config[config_name])
     

@@ -11,11 +11,26 @@ import click
 from app import create_app
 from dotenv import load_dotenv
 
-# Load environment variables from .env file if it exists
-load_dotenv()
+try:
+    # Try to load the .env file
+    load_dotenv(encoding='utf-8')
+except Exception as e:
+    print(f"Warning: Could not load .env file: {e}")
+
+# Clean and set FLASK_ENV
+flask_env = os.getenv('FLASK_ENV', 'development')
+if flask_env:
+    # Remove any comments and whitespace
+    flask_env = flask_env.split('#')[0].strip()
+    if not flask_env:
+        flask_env = 'development'
+else:
+    flask_env = 'development'
+
+print(f"FLASK_ENV value: '{flask_env}'")
 
 # Create the Flask application instance
-app = create_app(os.getenv('FLASK_ENV', 'development'))
+app = create_app(flask_env)
 
 @click.group()
 def cli():
@@ -62,10 +77,13 @@ def init():
     
     # Create .env file if it doesn't exist
     if not os.path.exists('.env'):
-        with open('.env', 'w') as f:
+        with open('.env', 'w', encoding='utf-8') as f:
             f.write("""# Flask Environment Variables
 FLASK_ENV=development
 FLASK_APP=run.py
+FLASK_DEBUG=1
+
+# Security Keys
 SECRET_KEY=your-secret-key-change-in-production
 JWT_SECRET_KEY=your-jwt-secret-key-change-in-production
 WTF_CSRF_SECRET_KEY=your-csrf-secret-key-change-in-production
@@ -73,12 +91,11 @@ WTF_CSRF_SECRET_KEY=your-csrf-secret-key-change-in-production
 # Database Configuration
 DATABASE_URL=sqlite:///app.db
 
-# Redis Configuration (for rate limiting in production)
-# REDIS_URL=redis://localhost:6379/0
+# Redis Configuration
+#REDIS_URL=redis://localhost:6379/0
 
 # Logging
-LOG_LEVEL=DEBUG
-""")
+LOG_LEVEL=DEBUG""")
         click.echo("Created .env file with default configuration")
     
     click.echo("\nInitialization complete! You can now run the application with:")

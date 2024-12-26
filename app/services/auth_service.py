@@ -63,7 +63,12 @@ def create_user(username: str, password: str) -> bool:
         bool: True if user creation successful, False if username already exists
     """
     try:
-        if not validate_username(username) or not validate_password(password):
+        # Validate username and password
+        username_valid, username_error = validate_username(username)
+        password_valid, password_error = validate_password(password)
+        
+        if not username_valid or not password_valid:
+            current_app.logger.warning(f"Validation failed - Username: {username_error}, Password: {password_error}")
             return False
 
         users_data = load_data('data/users.json')

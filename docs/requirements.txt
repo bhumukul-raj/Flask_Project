@@ -1,0 +1,8 @@
+# Documentation dependencies
+sphinx==7.2.6
+sphinx-rtd-theme==2.0.0
+sphinx-autodoc-typehints==1.25.2
+sphinx-copybutton==0.5.2  # For copy buttons on code blocks
+myst-parser==2.0.0  # For Markdown support
+sphinx-autoapi==3.0.0  # For API documentation
+sphinx-autobuild==2024.2.4  # For live reloading during development 

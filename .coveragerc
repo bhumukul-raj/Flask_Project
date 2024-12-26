@@ -1,0 +1,23 @@
+[run]
+source = app
+data_file = docs/coverage/.coverage
+branch = True
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    pass
+    raise ImportError
+    except ImportError:
+ignore_errors = True
+
+[html]
+directory = docs/coverage
+title = Flask Auth Service Coverage Report
+
+[xml]
+output = docs/coverage/coverage.xml 

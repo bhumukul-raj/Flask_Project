@@ -201,7 +201,7 @@ The project uses various Python packages categorized by their purpose:
 - `WTForms==3.1.2` - Form validation
 
 ### Rate Limiting and Caching
-- `limits==3.9.0` - Rate limiting utilities
+- `limits==3.13.0` - Rate limiting utilities
 - `redis==5.0.2` - Redis client
 - `cachelib==0.9.0` - Caching library
 
@@ -230,7 +230,7 @@ The project uses various Python packages categorized by their purpose:
 
 ### Utilities
 - `email-validator==2.1.1` - Email validation
-- `Pillow==10.2.0` - Image processing
+- `Pillow==9.5.0` - Image processing
 - `requests==2.31.0` - HTTP library
 - `rich==13.9.4` - Rich text formatting
 - `python-slugify==8.0.4` - URL slug generation

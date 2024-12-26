@@ -158,4 +158,7 @@ config = {
     'testing': TestingConfig,
     'production': ProductionConfig,
     'default': DevelopmentConfig
-} 
+}
+
+# Debug print to see available configurations
+print(f"Available configurations: {list(config.keys())}") 
