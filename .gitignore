@@ -49,6 +49,7 @@ cover/
 tests/__pycache__/
 tests/*/__pycache__/
 tests/*/*/__pycache__/
+instance
 
 # Coverage specific
 docs/coverage/
