@@ -1,0 +1,8 @@
+{% extends "errors/base_error.html" %}
+
+{% block title %}Server Error{% endblock %}
+
+{% set error_code = '500' %}
+{% set error_title = 'Internal Server Error' %}
+{% set error_message = 'Sorry, something went wrong on our end. We\'re working to fix it.' %}
+{% set error_type = 'danger' %} 

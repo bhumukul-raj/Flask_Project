@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-4">
+            <!-- Profile Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <img src="{{ current_user.avatar_url|default('https://via.placeholder.com/150') }}" 
+                         class="rounded-circle mb-3" width="150" height="150" alt="Profile Picture">
+                    <h3 class="h5 mb-2">{{ current_user.username }}</h3>
+                    <p class="text-muted mb-3">Member since {{ current_user.created_at|default('N/A', true) }}</p>
+                    <button class="btn btn-outline-primary btn-sm" onclick="document.getElementById('avatarInput').click()">
+                        <i class="fas fa-camera me-2"></i>Change Picture
+                    </button>
+                    <input type="file" id="avatarInput" class="d-none" accept="image/*">
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h4 class="h6 mb-0">Quick Stats</h4>
+                </div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-book text-primary me-2"></i>Subjects Enrolled
+                        </div>
+                        <span class="badge bg-primary rounded-pill">{{ user_stats.subjects_enrolled }}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-trophy text-warning me-2"></i>Achievements
+                        </div>
+                        <span class="badge bg-warning rounded-pill">{{ user_stats.achievements }}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-clock text-info me-2"></i>Hours Spent
+                        </div>
+                        <span class="badge bg-info rounded-pill">{{ user_stats.hours_spent }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <!-- Profile Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h4 class="h6 mb-0">Profile Information</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('main.update_profile') }}" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" 
+                                   value="{{ current_user.username }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ current_user.email }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="bio" class="form-label">Bio</label>
+                            <textarea class="form-control" id="bio" name="bio" rows="3">{{ current_user.bio }}</textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Change Password -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="h6 mb-0">Change Password</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('main.change_password') }}" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current_password" 
+                                   name="current_password" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new_password" 
+                                   name="new_password" required minlength="8">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirm_password" 
+                                   name="confirm_password" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-key me-2"></i>Change Password
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle avatar upload
+    const avatarInput = document.getElementById('avatarInput');
+    avatarInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const formData = new FormData();
+            formData.append('avatar', file);
+            
+            fetch('{{ url_for('main.upload_avatar') }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to upload avatar. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while uploading the avatar.');
+            });
+        }
+    });
+
+    // Password match validation
+    const newPassword = document.getElementById('new_password');
+    const confirmPassword = document.getElementById('confirm_password');
+    
+    confirmPassword.addEventListener('input', function() {
+        if (newPassword.value !== confirmPassword.value) {
+            confirmPassword.setCustomValidity('Passwords do not match');
+        } else {
+            confirmPassword.setCustomValidity('');
+        }
+    });
+
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    });
+});
+</script>
+{% endblock %} 

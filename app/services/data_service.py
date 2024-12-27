@@ -19,6 +19,8 @@ import json
 import logging
 from pathlib import Path
 from urllib.parse import urlparse
+import os
+from flask import current_app
 
 # Configure logger for data service
 logger = logging.getLogger(__name__)
@@ -53,20 +55,13 @@ def load_data(filename):
     Raises:
         json.JSONDecodeError: If the file contains invalid JSON
     """
+    file_path = os.path.join(current_app.config['DATA_DIR'], filename)
     try:
-        file_path = Path('data') / filename
-        with open(file_path, 'r') as f:
-            data = json.load(f)
-            logger.debug(f'Successfully loaded data from {filename}')
-            return data
-    except FileNotFoundError:
-        logger.warning(f'File not found: {filename}')
+        if os.path.exists(file_path):
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
         return {}
-    except json.JSONDecodeError as e:
-        logger.error(f'Invalid JSON in {filename}: {str(e)}')
-        raise
-    except Exception as e:
-        logger.error(f'Unexpected error loading {filename}: {str(e)}')
+    except json.JSONDecodeError:
         return {}
 
 def save_data(filename, data):
@@ -83,19 +78,12 @@ def save_data(filename, data):
     Note:
         This function will create the data directory if it doesn't exist.
     """
-    try:
-        # Ensure data directory exists
-        data_dir = Path('data')
-        data_dir.mkdir(exist_ok=True)
-        
-        file_path = data_dir / filename
-        with open(file_path, 'w') as f:
-            json.dump(data, f, indent=4)
-            logger.info(f'Successfully saved data to {filename}')
-            return True
-    except Exception as e:
-        logger.error(f'Error saving data to {filename}: {str(e)}')
-        return False
+    file_path = os.path.join(current_app.config['DATA_DIR'], filename)
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    with open(file_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=4)
+        logger.info(f'Successfully saved data to {filename}')
+        return True
 
 def validate_data(data, schema):
     """

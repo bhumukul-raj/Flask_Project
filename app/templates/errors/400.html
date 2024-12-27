@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}400 Bad Request{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <h1>400 Bad Request</h1>
+    <div class="error-details">
+        <p>{{ message }}</p>
+        {% if error.details %}
+        <div class="error-additional">
+            <h3>Additional Details:</h3>
+            <pre>{{ error.details }}</pre>
+        </div>
+        {% endif %}
+    </div>
+    <div class="error-actions">
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary">Return to Home</a>
+        <button onclick="window.history.back()" class="btn btn-secondary">Go Back</button>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <h1 class="mb-3">Welcome back, {{ current_user.username }}!</h1>
+            <p class="lead text-muted">Track your progress and continue learning</p>
+        </div>
+        <div class="col-lg-4 text-lg-end">
+            <a href="{{ url_for('main.subjects') }}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Find New Subjects
+            </a>
+        </div>
+    </div>
+
+    <!-- Progress Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Overall Progress</h6>
+                            <h2 class="card-title mb-0">{{ user_data.progress }}%</h2>
+                        </div>
+                        <div class="fs-1">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Subjects Enrolled</h6>
+                            <h2 class="card-title mb-0">{{ user_data.subjects|length }}</h2>
+                        </div>
+                        <div class="fs-1">
+                            <i class="fas fa-book"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Achievements</h6>
+                            <h2 class="card-title mb-0">{{ user_data.achievements|length }}</h2>
+                        </div>
+                        <div class="fs-1">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enrolled Subjects -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Your Subjects</h2>
+        </div>
+        <div class="card-body">
+            {% if user_data.subjects %}
+                <div class="row g-4">
+                    {% for subject in user_data.subjects %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100">
+                            {% if subject.image_url %}
+                            <img src="{{ subject.image_url }}" class="card-img-top" alt="{{ subject.title }}">
+                            {% else %}
+                            <div class="card-img-top bg-light text-center py-4">
+                                <i class="fas fa-book-open fa-4x text-primary"></i>
+                            </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ subject.title }}</h5>
+                                <div class="progress mb-3">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ subject.progress }}%"
+                                         aria-valuenow="{{ subject.progress }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ subject.progress }}%
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">Last accessed: {{ subject.last_accessed }}</small>
+                                    <a href="{{ url_for('main.subject_detail', subject_id=subject.id) }}" 
+                                       class="btn btn-primary btn-sm">
+                                        Continue
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-books fa-3x text-muted mb-3"></i>
+                    <p class="mb-0">You haven't enrolled in any subjects yet.</p>
+                    <a href="{{ url_for('main.subjects') }}" class="btn btn-primary mt-3">
+                        Browse Subjects
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Recent Activity</h2>
+        </div>
+        <div class="card-body">
+            {% if user_data.recent_activity %}
+                <div class="list-group list-group-flush">
+                    {% for activity in user_data.recent_activity %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ activity.title }}</h6>
+                            <small class="text-muted">{{ activity.timestamp }}</small>
+                        </div>
+                        <p class="mb-1">{{ activity.description }}</p>
+                        <small class="text-muted">{{ activity.subject }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center text-muted mb-0">No recent activity to show.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

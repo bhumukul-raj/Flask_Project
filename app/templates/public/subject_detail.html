@@ -1,130 +1,197 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ subject.name }} - Learning Platform</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <style>
-        .section-card {
-            transition: transform 0.3s ease;
-        }
-        .section-card:hover {
-            transform: translateY(-5px);
-        }
-        .topic-list {
-            list-style: none;
-            padding-left: 0;
-        }
-        .topic-list li {
-            padding: 10px 15px;
-            border-bottom: 1px solid #eee;
-        }
-        .topic-list li:last-child {
-            border-bottom: none;
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.home') }}">Learning Platform</a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav mr-auto">
+{% extends "base.html" %}
+
+{% block title %}{{ subject.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Subject Header -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.subjects') }}">Subjects</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ subject.title }}</li>
+                </ol>
+            </nav>
+            <h1 class="mb-3">{{ subject.title }}</h1>
+            <div class="d-flex align-items-center mb-3">
+                <span class="badge bg-primary me-2">{{ subject.level }}</span>
+                <span class="text-muted">
+                    <i class="fas fa-users me-1"></i>{{ subject.enrolled_count|default(0) }} students enrolled
+                </span>
+            </div>
+            <p class="lead">{{ subject.description }}</p>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
                     {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.dashboard') }}">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-                <ul class="navbar-nav">
-                    {% if current_user.is_authenticated %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-                            <i class="fas fa-user"></i> {{ current_user.username }}
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right">
-                            <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
-                                <i class="fas fa-sign-out-alt"></i> Logout
+                        {% if is_enrolled %}
+                            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary w-100 mb-3">
+                                <i class="fas fa-book-reader me-2"></i>Continue Learning
                             </a>
-                        </div>
-                    </li>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" role="progressbar" style="width: {{ progress|default(0) }}%"
+                                     aria-valuenow="{{ progress|default(0) }}" aria-valuemin="0" aria-valuemax="100">
+                                    {{ progress|default(0) }}%
+                                </div>
+                            </div>
+                            <small class="text-muted">Your progress</small>
+                        {% else %}
+                            <button class="btn btn-primary w-100" onclick="enrollSubject('{{ subject.id }}')">
+                                <i class="fas fa-plus-circle me-2"></i>Enroll Now
+                            </button>
+                        {% endif %}
                     {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.login') }}">
-                            <i class="fas fa-sign-in-alt"></i> Login
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary w-100">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login to Enroll
                         </a>
-                    </li>
                     {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('main.home') }}">Home</a></li>
-                <li class="breadcrumb-item active">{{ subject.name }}</li>
-            </ol>
-        </nav>
-
-        <div class="row">
-            <div class="col-md-8">
-                <h1>{{ subject.name }}</h1>
-                <p class="lead">{{ subject.description }}</p>
-            </div>
-            <div class="col-md-4 text-right">
-                <p class="text-muted">
-                    <i class="fas fa-clock"></i> Last updated: {{ subject.updated_at }}
-                </p>
-            </div>
-        </div>
-
-        <div class="row mt-4">
-            {% for section in subject.sections|sort(attribute='order') %}
-            <div class="col-md-6 mb-4">
-                <div class="card section-card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ section.name }}</h5>
-                        <p class="card-text">{{ section.description }}</p>
-                        
-                        <h6 class="mt-4">Topics:</h6>
-                        <ul class="topic-list">
-                            {% for topic in section.topics|sort(attribute='order') %}
-                            <li>
-                                <i class="fas fa-book"></i> {{ topic.name }}
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
                 </div>
             </div>
-            {% endfor %}
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-</body>
-</html> 
+    <!-- Subject Content -->
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Overview Tab -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">What You'll Learn</h2>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        {% for objective in subject.learning_objectives %}
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>{{ objective }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Course Content -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Course Content</h2>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="courseContent">
+                        {% for section in subject.sections %}
+                        <div class="accordion-item">
+                            <h3 class="accordion-header" id="heading{{ loop.index }}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapse{{ loop.index }}">
+                                    {{ section.title }}
+                                </button>
+                            </h3>
+                            <div id="collapse{{ loop.index }}" class="accordion-collapse collapse"
+                                 data-bs-parent="#courseContent">
+                                <div class="accordion-body">
+                                    <ul class="list-group list-group-flush">
+                                        {% for lesson in section.lessons %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-play-circle text-primary me-2"></i>
+                                                {{ lesson.title }}
+                                            </div>
+                                            <span class="badge bg-light text-dark">{{ lesson.duration }}</span>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Requirements -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Requirements</h2>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        {% for requirement in subject.requirements %}
+                        <li>{{ requirement }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Instructor Info -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Instructor</h2>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{{ subject.instructor.avatar_url|default('https://via.placeholder.com/50') }}"
+                             class="rounded-circle me-3" width="50" height="50" alt="Instructor">
+                        <div>
+                            <h3 class="h6 mb-1">{{ subject.instructor.name }}</h3>
+                            <p class="small text-muted mb-0">{{ subject.instructor.title }}</p>
+                        </div>
+                    </div>
+                    <p class="mb-0">{{ subject.instructor.bio }}</p>
+                </div>
+            </div>
+
+            <!-- Share -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Share</h2>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-around">
+                        <a href="#" class="text-primary" title="Share on Facebook">
+                            <i class="fab fa-facebook fa-2x"></i>
+                        </a>
+                        <a href="#" class="text-info" title="Share on Twitter">
+                            <i class="fab fa-twitter fa-2x"></i>
+                        </a>
+                        <a href="#" class="text-success" title="Share on WhatsApp">
+                            <i class="fab fa-whatsapp fa-2x"></i>
+                        </a>
+                        <a href="#" class="text-secondary" title="Share via Email">
+                            <i class="fas fa-envelope fa-2x"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+function enrollSubject(subjectId) {
+    fetch(`/api/subjects/${subjectId}/enroll`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '{{ url_for('main.dashboard') }}';
+        } else {
+            alert('Failed to enroll in the subject. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while enrolling in the subject.');
+    });
+}
+</script>
+{% endblock %} 

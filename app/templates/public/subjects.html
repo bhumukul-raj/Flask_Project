@@ -1,133 +1,146 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subjects - Learning Platform</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <style>
-        .hero {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 4rem 0;
-            margin-bottom: 2rem;
-        }
-        .hero h1 {
-            font-size: 3rem;
-            font-weight: bold;
-        }
-        .hero p {
-            font-size: 1.25rem;
-            opacity: 0.9;
-        }
-        .subject-card {
-            transition: transform 0.3s ease;
-        }
-        .subject-card:hover {
-            transform: translateY(-5px);
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.home') }}">Learning Platform</a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ml-auto">
-                    {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.dashboard') }}">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-                            <i class="fas fa-user"></i> {{ current_user.username }}
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right">
-                            <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </a>
-                        </div>
-                    </li>
-                    {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.login') }}">
-                            <i class="fas fa-sign-in-alt"></i> Login
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <div class="hero">
-        <div class="container text-center">
-            <h1>Available Subjects</h1>
-            <p class="lead">Discover a world of knowledge with our comprehensive learning resources.</p>
+{% block title %}Subjects{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <h1 class="mb-0">Available Subjects</h1>
+            <p class="lead text-muted">Explore our comprehensive collection of subjects</p>
+        </div>
+        <div class="col-lg-4">
+            <div class="input-group">
+                <input type="text" class="form-control" id="searchSubjects" placeholder="Search subjects...">
+                <button class="btn btn-outline-secondary" type="button">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
         </div>
     </div>
 
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
+    <!-- Filters Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <select class="form-select" id="categoryFilter">
+                                <option value="">All Categories</option>
+                                <option value="mathematics">Mathematics</option>
+                                <option value="science">Science</option>
+                                <option value="programming">Programming</option>
+                                <option value="languages">Languages</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="levelFilter">
+                                <option value="">All Levels</option>
+                                <option value="beginner">Beginner</option>
+                                <option value="intermediate">Intermediate</option>
+                                <option value="advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="sortBy">
+                                <option value="popular">Most Popular</option>
+                                <option value="newest">Newest First</option>
+                                <option value="name">Name A-Z</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" id="applyFilters">
+                                <i class="fas fa-filter me-2"></i>Apply Filters
+                            </button>
+                        </div>
                     </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <div class="row">
+    <!-- Subjects Grid -->
+    <div class="row g-4">
+        {% if subjects %}
             {% for subject in subjects %}
-            <div class="col-md-4 mb-4">
-                <div class="card subject-card h-100">
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm">
+                    {% if subject.image_url %}
+                    <img src="{{ subject.image_url }}" class="card-img-top" alt="{{ subject.title }}">
+                    {% else %}
+                    <div class="card-img-top bg-light text-center py-4">
+                        <i class="fas fa-book-open fa-4x text-primary"></i>
+                    </div>
+                    {% endif %}
                     <div class="card-body">
-                        <h5 class="card-title">{{ subject.name }}</h5>
-                        <p class="card-text">{{ subject.description }}</p>
-                        <a href="{{ url_for('main.subject_detail', subject_id=subject.id) }}" class="btn btn-primary">
-                            <i class="fas fa-book-open"></i> Learn More
-                        </a>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">{{ subject.title }}</h5>
+                            <span class="badge bg-primary">{{ subject.level }}</span>
+                        </div>
+                        <p class="card-text text-truncate-2">{{ subject.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="small text-muted">
+                                <i class="fas fa-users me-1"></i>{{ subject.enrolled_count|default(0) }} students
+                            </div>
+                            <a href="{{ url_for('main.subject_detail', subject_id=subject.id) }}" class="btn btn-outline-primary">
+                                Learn More
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             {% endfor %}
-        </div>
-    </div>
-
-    <footer class="bg-dark text-white mt-5">
-        <div class="container py-4">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Learning Platform</h5>
-                    <p>Empowering learners worldwide with quality education.</p>
-                </div>
-                <div class="col-md-6 text-md-right">
-                    <h5>Quick Links</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="{{ url_for('main.home') }}" class="text-white">Home</a></li>
-                        {% if current_user.is_authenticated %}
-                        <li><a href="{{ url_for('main.dashboard') }}" class="text-white">Dashboard</a></li>
-                        {% else %}
-                        <li><a href="{{ url_for('auth.login') }}" class="text-white">Login</a></li>
-                        {% endif %}
-                    </ul>
+        {% else %}
+            <div class="col-12 text-center">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>No subjects available at the moment.
                 </div>
             </div>
-        </div>
-    </footer>
+        {% endif %}
+    </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-</body>
-</html> 
+    <!-- Pagination -->
+    {% if subjects %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+            </li>
+            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item">
+                <a class="page-link" href="#">Next</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchInput = document.getElementById('searchSubjects');
+    searchInput.addEventListener('input', function(e) {
+        // Implement search logic here
+        console.log('Searching for:', e.target.value);
+    });
+
+    // Filter functionality
+    const applyFiltersBtn = document.getElementById('applyFilters');
+    applyFiltersBtn.addEventListener('click', function() {
+        const category = document.getElementById('categoryFilter').value;
+        const level = document.getElementById('levelFilter').value;
+        const sortBy = document.getElementById('sortBy').value;
+        
+        // Implement filter logic here
+        console.log('Filters:', { category, level, sortBy });
+    });
+});
+</script>
+{% endblock %} 

@@ -1,134 +1,93 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Learning Platform</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <style>
-        .hero-section {
-            background-color: #f8f9fa;
-            padding: 60px 0;
-            margin-bottom: 40px;
-            border-radius: 10px;
-        }
-        .feature-box {
-            text-align: center;
-            padding: 30px;
-            margin-bottom: 30px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        .feature-box:hover {
-            transform: translateY(-5px);
-        }
-        .feature-icon {
-            font-size: 2.5rem;
-            color: #007bff;
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.home') }}">Learning Platform</a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ml-auto">
-                    {% if current_user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.subjects') }}">All Subjects</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
-                        </li>
-                    {% endif %}
-                </ul>
+{% extends "base.html" %}
+
+{% block title %}Welcome to Learning Platform{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section text-white position-relative">
+    <div class="hero-bg position-absolute w-100 h-100" style="background: url('{{ url_for('static', filename='img/hero-bg.jpg') }}') center/cover; filter: brightness(0.6);"></div>
+    <div class="container position-relative py-5">
+        <div class="row min-vh-75 align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold mb-4">Empower Your Learning Journey</h1>
+                <p class="lead mb-4">Access quality education resources, track your progress, and achieve your learning goals with our comprehensive platform.</p>
+                {% if not current_user.is_authenticated %}
+                <div class="d-flex gap-3">
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Get Started</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg">Sign In</a>
+                </div>
+                {% else %}
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+                {% endif %}
             </div>
         </div>
-    </nav>
+    </div>
+</section>
 
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <div class="hero-section">
-            <div class="container">
-                <div class="row justify-content-center">
-                    <div class="col-md-8 text-center">
-                        <h1 class="display-4 mb-4">Welcome to Learning Platform</h1>
-                        {% if current_user.is_authenticated %}
-                            <h3 class="mb-4">Welcome back, {{ current_user.username }}!</h3>
-                            <p class="lead mb-4">Continue your learning journey with us.</p>
-                            <div class="btn-group" role="group" aria-label="Navigation">
-                                <a href="{{ url_for('main.subjects') }}" class="btn btn-primary btn-lg">View All Subjects</a>
-                                <a href="{{ url_for('main.dashboard') }}" class="btn btn-info btn-lg">Go to Dashboard</a>
-                            </div>
-                        {% else %}
-                            <p class="lead mb-4">Your gateway to knowledge and skills development</p>
-                            <div class="btn-group" role="group" aria-label="Navigation">
-                                <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Login</a>
-                                <a href="{{ url_for('auth.register') }}" class="btn btn-success btn-lg">Register</a>
-                            </div>
+<!-- Featured Subjects -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Featured Subjects</h2>
+        <div class="row g-4">
+            {% if featured_subjects %}
+                {% for subject in featured_subjects %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100">
+                        {% if subject.image_url %}
+                        <img src="{{ subject.image_url }}" class="card-img-top" alt="{{ subject.title }}">
                         {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ subject.title }}</h5>
+                            <p class="card-text text-truncate-2">{{ subject.description }}</p>
+                            <a href="{{ url_for('main.subject_detail', subject_id=subject.id) }}" class="btn btn-primary">Learn More</a>
+                        </div>
                     </div>
                 </div>
-            </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center">
+                    <p>No featured subjects available at the moment.</p>
+                </div>
+            {% endif %}
         </div>
+    </div>
+</section>
 
-        <div class="row mt-5">
+<!-- Features Section -->
+<section class="bg-light py-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Why Choose Us</h2>
+        <div class="row g-4">
             <div class="col-md-4">
-                <div class="feature-box">
-                    <i class="fas fa-book-reader feature-icon"></i>
-                    <h3>Quality Content</h3>
-                    <p>Access high-quality educational materials curated by experts.</p>
+                <div class="text-center">
+                    <i class="fas fa-graduation-cap fa-3x text-primary mb-3"></i>
+                    <h4>Quality Content</h4>
+                    <p>Access carefully curated educational materials designed to enhance your learning experience.</p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="feature-box">
-                    <i class="fas fa-users feature-icon"></i>
-                    <h3>Expert Instructors</h3>
-                    <p>Learn from experienced instructors in various fields.</p>
+                <div class="text-center">
+                    <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                    <h4>Track Progress</h4>
+                    <p>Monitor your learning journey with detailed progress tracking and performance analytics.</p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="feature-box">
-                    <i class="fas fa-certificate feature-icon"></i>
-                    <h3>Certificates</h3>
-                    <p>Earn certificates upon completing your courses.</p>
+                <div class="text-center">
+                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                    <h4>Community Support</h4>
+                    <p>Join a community of learners and get support from experienced educators.</p>
                 </div>
             </div>
         </div>
     </div>
+</section>
+{% endblock %}
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-</body>
-</html> 
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize any home page specific JavaScript here
+    });
+</script>
+{% endblock %} 

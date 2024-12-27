@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Session Monitor{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Session Monitor</h1>
+        <a href="{{ url_for('admin.index') }}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Active Sessions</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Session ID</th>
+                        <th>User</th>
+                        <th>IP Address</th>
+                        <th>Started</th>
+                        <th>Last Activity</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if sessions %}
+                        {% for session in sessions %}
+                        <tr>
+                            <td><code>{{ session.id[:8] }}...</code></td>
+                            <td>{{ session.user_id|default('Anonymous', true) }}</td>
+                            <td>{{ session.ip_address }}</td>
+                            <td>{{ session.created_at }}</td>
+                            <td>{{ session.last_activity }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="terminateSession('{{ session.id }}')">
+                                    <i class="fas fa-times"></i> Terminate
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">No active sessions</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+function terminateSession(sessionId) {
+    if (confirm('Are you sure you want to terminate this session?')) {
+        fetch(`/admin/terminate_session/${sessionId}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Failed to terminate session');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while terminating the session');
+        });
+    }
+}
+</script>
+{% endblock %} 

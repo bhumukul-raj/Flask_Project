@@ -43,7 +43,16 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = 'Strict'
-    PERMANENT_SESSION_LIFETIME = timedelta(days=7)
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
+    SESSION_REFRESH_EACH_REQUEST = True
+    SESSION_VALIDATE_IP = True
+    SESSION_USE_SIGNER = True
+    SESSION_FILE_THRESHOLD = 500
+    SESSION_FILE_MODE = 0o600
+    
+    # Additional Security Settings
+    MAX_CONCURRENT_SESSIONS = 5
+    SESSION_PROTECTION = 'strong'
     
     # CSRF Protection
     WTF_CSRF_ENABLED = True
@@ -68,7 +77,10 @@ class Config:
     # Logging Configuration
     LOG_LEVEL = 'INFO'
     LOG_FORMAT = '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
-    LOG_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs', 'app.log')
+    LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
+    LOG_FILE = os.path.join(LOG_DIR, 'app.log')
+    LOG_MAX_BYTES = 10 * 1024 * 1024  # 10MB
+    LOG_BACKUP_COUNT = 10
 
 
 class DevelopmentConfig(Config):
@@ -81,6 +93,8 @@ class DevelopmentConfig(Config):
     TALISMAN_FORCE_HTTPS = False
     SESSION_COOKIE_SECURE = False
     JWT_COOKIE_SECURE = False
+    SESSION_VALIDATE_IP = False
+    PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     
     # Development-specific settings
     SQLALCHEMY_ECHO = True
@@ -113,6 +127,7 @@ class TestingConfig(Config):
     # Test data directory and log file
     DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'tests', 'data')
     LOG_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs', 'testing.log')
+    LOG_LEVEL = 'DEBUG'
 
 
 class ProductionConfig(Config):
@@ -120,6 +135,8 @@ class ProductionConfig(Config):
     
     ENV = 'production'
     DEBUG = False
+    LOG_LEVEL = 'WARNING'
+    LOG_FILE = '/var/log/app/app.log'  # Production log location
     
     def __init__(self):
         """Initialize production configuration and validate environment variables."""
@@ -136,7 +153,6 @@ class ProductionConfig(Config):
     # Production-specific settings
     RATELIMIT_DEFAULT = "50/hour"  # Stricter rate limiting
     RATELIMIT_STORAGE_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-    LOG_LEVEL = 'WARNING'
     
     # Use Redis for caching in production
     CACHE_TYPE = 'redis'
@@ -148,9 +164,6 @@ class ProductionConfig(Config):
         'pool_recycle': 3600,
         'pool_pre_ping': True
     }
-    
-    # Production log file
-    LOG_FILE = '/var/log/app/app.log'
 
 
 config = {

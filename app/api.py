@@ -6,7 +6,7 @@ This module defines all API endpoints for the application.
 
 import os
 from flask import Blueprint, jsonify, current_app, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import current_user, jwt_required, get_jwt_identity
 from flask_jwt_extended.exceptions import NoAuthorizationError
 from .services.data_service import load_data, save_data
 from functools import wraps
@@ -585,3 +585,38 @@ def create_topic(section_id):
     except Exception as e:
         current_app.logger.error(f"Error creating topic in section {section_id}: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500 
+
+@api.route('/log/error', methods=['POST'])
+@jwt_required
+def log_client_error():
+    """Log client-side errors."""
+    try:
+        error_data = request.get_json()
+        
+        # Add user information if available
+        if current_user.is_authenticated:
+            error_data['user_id'] = current_user.id
+            error_data['username'] = current_user.username
+        
+        # Add request information
+        error_data['ip_address'] = request.remote_addr
+        error_data['user_agent'] = str(request.user_agent)
+        error_data['referrer'] = request.referrer
+        
+        # Log the error
+        current_app.logger.error(
+            "Client Error: %(type)s - %(message)s",
+            error_data
+        )
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Error logged successfully'
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Error logging client error: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Failed to log error'
+        }), 500 

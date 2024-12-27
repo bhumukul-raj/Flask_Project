@@ -1,64 +1,49 @@
-"""
-Error handlers for the application.
+"""Error handlers for the application."""
 
-This module contains error handlers for various HTTP error codes,
-supporting both HTML and JSON responses based on the request type.
-"""
-
-from flask import render_template, jsonify, request
-from werkzeug.exceptions import HTTPException
-import logging
-import re
-
-logger = logging.getLogger(__name__)
-
-def format_error_name(error_class_name):
-    """Format error class name into a readable string.
-    
-    Example: 'BadRequest' -> 'Bad Request'
-    """
-    # Add space before capital letters and title case the result
-    name = re.sub(r'(?<!^)(?=[A-Z])', ' ', error_class_name)
-    return name.title()
-
-def is_json_request():
-    """Check if the request expects a JSON response."""
-    if request.is_json:
-        return True
-    if request.accept_mimetypes.best == 'application/json':
-        return True
-    return False
-
-def handle_error(error):
-    """Generic error handler for all HTTP exceptions."""
-    # Log the error
-    logger.error(f"Error occurred: {error}")
-    
-    # Get error code and message
-    code = getattr(error, 'code', 500)
-    message = str(error.description if hasattr(error, 'description') else error)
-    
-    # Get error name
-    error_name = format_error_name(error.__class__.__name__)
-    
-    # Return JSON response if requested
-    if is_json_request():
-        response = jsonify({
-            'error': error_name,
-            'message': message
-        })
-        response.status_code = code
-        return response
-    
-    # Return HTML response
-    return render_template('errors/error.html',
-                         code=code,
-                         message=message), code
+from flask import render_template, current_app
+import traceback
 
 def register_error_handlers(app):
-    """Register error handlers with the Flask application."""
-    # Register handler for all HTTP exceptions
-    app.register_error_handler(HTTPException, handle_error)
+    """Register error handlers for the application."""
     
-    # Register handler for generic exceptions
-    app.register_error_handler(Exception, handle_error) 
+    @app.errorhandler(400)
+    def bad_request_error(error):
+        """Handle 400 Bad Request errors."""
+        current_app.logger.error(f'Bad Request: {error}')
+        return render_template('errors/400.html', error=str(error)), 400
+
+    @app.errorhandler(401)
+    def unauthorized_error(error):
+        """Handle 401 Unauthorized errors."""
+        current_app.logger.error(f'Unauthorized: {error}')
+        return render_template('errors/401.html', error=str(error)), 401
+
+    @app.errorhandler(403)
+    def forbidden_error(error):
+        """Handle 403 Forbidden errors."""
+        current_app.logger.error(f'Forbidden: {error}')
+        return render_template('errors/403.html', error=str(error)), 403
+
+    @app.errorhandler(404)
+    def not_found_error(error):
+        """Handle 404 Not Found errors."""
+        current_app.logger.error(f'Not Found: {error}')
+        return render_template('errors/404.html', error=str(error)), 404
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        """Handle 500 Internal Server Error."""
+        error_traceback = traceback.format_exc()
+        current_app.logger.error(f'Internal Error: {error}\n{error_traceback}')
+        return render_template('errors/500.html', 
+                             error=str(error),
+                             error_details=error_traceback if app.debug else None), 500
+
+    @app.errorhandler(Exception)
+    def unhandled_exception(error):
+        """Handle unhandled exceptions."""
+        error_traceback = traceback.format_exc()
+        current_app.logger.error(f'Unhandled Exception: {error}\n{error_traceback}')
+        return render_template('errors/500.html',
+                             error="An unexpected error occurred.",
+                             error_details=error_traceback if app.debug else None), 500 
