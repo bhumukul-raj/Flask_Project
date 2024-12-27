@@ -7,7 +7,7 @@
             "password": "pbkdf2:sha256:600000$vLIiQp0ojSgFMOcC$129df16d3328a25c325c48508ff341f6947b0b1815c75ff9d174907295ef5f34",
             "role": "admin",
             "created_at": "2024-12-25T17:59:31.266547+00:00",
-            "last_login": "2024-12-26T23:12:17.223527+00:00",
+            "last_login": "2024-12-27T02:51:57.035185+00:00",
             "is_active": true,
             "settings": {
                 "notifications_enabled": true,
@@ -19,6 +19,14 @@
                 "view_analytics",
                 "manage_settings"
             ]
+        },
+        {
+            "id": "1748dffc-5c38-4646-bc3b-acbd6ec7a6b0",
+            "username": "newuser",
+            "password": "scrypt:32768:8:1$g48S2hPG3wNXz51H$1bfb1223cb59ac0920d381e49ed8d9bf64786e7469719d17752bda9094bce7180ed89ce03c96d4c4b9e60b5f69f2b7780d2ddade9b20544281820fa9c94c5f2d",
+            "role": "user",
+            "created_at": "2024-12-27T00:50:07.999824+00:00",
+            "last_login": null
         }
     ]
 }

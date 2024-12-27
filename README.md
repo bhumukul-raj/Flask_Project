@@ -1,9 +1,112 @@
-# Flask Project Setup Guide
+# Flask Project - Complete Documentation
 
+## Table of Contents
+1. [Project Overview](#project-overview)
+2. [Project Checklist](#project-checklist)
+3. [Project Structure](#project-structure)
+4. [Quick Start](#quick-start)
+5. [Setup Guide](#setup-guide)
+6. [Configuration](#configuration)
+7. [User Manual](#user-manual)
+8. [API Documentation](#api-documentation)
+9. [Security Features](#security-features)
+10. [Testing](#testing)
+11. [Dependencies](#dependencies)
+12. [Production Deployment](#production-deployment)
+
+## Project Overview
 This is a Flask application with a comprehensive configuration setup for different environments (development, testing, and production).
 
-## Project Structure
+## Project Checklist
 
+### ✅ Completed Tasks
+
+#### Project Structure
+- [x] Basic project structure setup
+- [x] App package with blueprints
+- [x] Services directory with auth and data services
+- [x] Utils directory with helper functions
+- [x] Config directory for different environments
+- [x] Templates directory for HTML files
+- [x] Tests directory structure
+- [x] Data directory for JSON storage
+
+#### Security Setup
+- [x] JWT authentication implementation
+- [x] CSRF protection
+- [x] Rate limiting
+- [x] Security headers with Talisman
+- [x] Environment variables setup
+- [x] Password hashing implementation
+
+#### Basic Features
+- [x] User authentication service
+- [x] Data service for JSON operations
+- [x] Basic routing setup
+- [x] Index page template
+- [x] Dependencies in requirements.txt
+
+### 📝 Pending Tasks
+
+#### Configuration
+- [ ] Development configuration settings
+- [ ] Production configuration settings
+- [ ] Testing configuration settings
+
+#### Templates
+- [ ] Login page template
+- [ ] Registration page template
+- [ ] Error pages (404, 500)
+- [ ] User dashboard template
+
+#### Documentation
+- [ ] API documentation
+- [ ] Setup instructions
+- [ ] User manual
+- [ ] API endpoints documentation
+- [ ] Database schema documentation
+
+#### Testing
+- [ ] Route tests
+- [ ] Service tests
+- [ ] Authentication tests
+- [ ] Integration tests
+
+#### Main Application
+- [ ] Complete app.py implementation
+- [ ] Error handlers
+- [ ] Logging configuration
+- [ ] Database initialization
+
+#### Additional Features
+- [ ] User profile management
+- [ ] Password reset functionality
+- [ ] Email verification
+- [ ] Admin dashboard
+- [ ] User roles and permissions
+- [ ] API rate limiting rules
+
+#### Security Enhancements
+- [ ] Input validation
+- [ ] Output sanitization
+- [ ] Session management
+- [ ] Password complexity rules
+- [ ] Audit logging
+
+#### Deployment
+- [ ] Production deployment guide
+- [ ] Docker configuration
+- [ ] CI/CD setup
+- [ ] Backup strategy
+- [ ] Monitoring setup
+
+### 🔍 Notes
+- Keep track of completed items by checking them off
+- Prioritize security-related tasks
+- Add new items as needed
+- Review and update regularly
+
+## Project Structure
 ```
 Flask_Project/
 ├── app/                    # Application package
@@ -29,23 +132,44 @@ Flask_Project/
 
 ## Quick Start
 
-1. **Install Dependencies**:
+### Prerequisites
+- Python 3.8 or higher
+- pip (Python package installer)
+- Git (optional, for version control)
+
+### Installation Steps
+1. **Clone the repository** (if using Git):
+   ```bash
+   git clone <repository-url>
+   cd Flask_Project
+   ```
+
+2. **Create and activate virtual environment**:
+   ```bash
+   python -m venv venv
+   # Windows
+   .\venv\Scripts\activate
+   # Unix/MacOS
+   source venv/bin/activate
+   ```
+
+3. **Install Dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
 
-2. **Initialize the Project**:
-```bash
-python run.py init
-```
+4. **Initialize the Project**:
+   ```bash
+   python run.py init
+   ```
 
-3. **Start the Development Server**:
-```bash
-python run.py run
-```
+5. **Start the Development Server**:
+   ```bash
+   python run.py run
+   ```
 
 ### Custom Server Options
-   ```bash
+```bash
 # Change host and port
 python run.py run --host=0.0.0.0 --port=8000
 
@@ -55,33 +179,7 @@ python run.py run --no-reload
 
 ## Configuration
 
-The application uses different configurations based on the environment:
-
-### Development (Default)
-- Debug mode enabled
-- Security features relaxed for development
-- SQLite database
-- In-memory rate limiting
-- Detailed logging
-
-### Testing
-- In-memory SQLite database
-- Security features disabled
-- Shorter JWT expiration
-- Separate test data directory
-
-### Production
-- Enhanced security
-- Redis for caching and rate limiting
-- Connection pooling
-- Minimal logging
-- Required environment variables:
-  - SECRET_KEY
-  - JWT_SECRET_KEY
-  - WTF_CSRF_SECRET_KEY
-
-## Environment Variables
-
+### Environment Setup
 Create a `.env` file in the project root:
 
 ```ini
@@ -100,7 +198,98 @@ DATABASE_URL=sqlite:///app.db
 
 # Logging
 LOG_LEVEL=DEBUG
-   ```
+```
+
+### Environment Configurations
+
+1. **Development (Default)**
+   - Debug mode enabled
+   - Security features relaxed
+   - SQLite database
+   - In-memory rate limiting
+   - Detailed logging
+
+2. **Testing**
+   - In-memory SQLite database
+   - Security features disabled
+   - Shorter JWT expiration
+   - Separate test data directory
+
+3. **Production**
+   - Enhanced security
+   - Redis for caching and rate limiting
+   - Connection pooling
+   - Minimal logging
+
+## User Manual
+
+### Accessing the Application
+1. Open your web browser
+2. Navigate to `http://localhost:5000` (development) or your deployed URL
+3. You'll see the home page with available subjects
+
+### Default Credentials
+```
+Username: admin123
+Password: Admin@123
+Role: admin
+Email: admin@example.com
+```
+
+**Important Security Notes**:
+1. Change these credentials immediately after first login
+2. Create new admin accounts for production use
+3. Disable or delete the default admin account in production
+
+### User Registration
+1. Click "Register" in the navigation bar
+2. Fill in the registration form:
+   - Username (at least 3 characters)
+   - Password (at least 6 characters)
+3. Click "Register" button
+
+### User Login
+1. Click "Login" in the navigation bar
+2. Enter your credentials
+3. Click "Login" button
+
+## API Documentation
+
+### Authentication Endpoints
+
+#### Login
+- **URL:** `/login`
+- **Method:** `POST`
+- **Data Params:**
+  ```json
+  {
+    "username": "string",
+    "password": "string"
+  }
+  ```
+- **Success Response:** (200)
+  ```json
+  {
+    "access_token": "string"
+  }
+  ```
+
+#### Register
+- **URL:** `/register`
+- **Method:** `POST`
+- **Data Params:**
+  ```json
+  {
+    "username": "string",
+    "password": "string"
+  }
+  ```
+
+#### Logout
+- **URL:** `/logout`
+- **Method:** `GET`
+- **Headers Required:**
+  - Authorization: Bearer {token}
 
 ## Security Features
 
@@ -125,29 +314,58 @@ LOG_LEVEL=DEBUG
    - 1-hour token lifetime
    - Secure key configuration
 
-5. **Session Security**:
-   - HTTP-only cookies
-   - Secure cookies (in production)
-   - 7-day lifetime
-   - Strict same-site policy
+## Testing
 
-## File Upload Configuration
+### Running Tests
+```bash
+# Run complete test suite
+pytest
 
-- Maximum file size: 10MB
-- Upload directory: `/uploads`
-- Supported in development and production
+# Run tests by category
+pytest tests/functional/
+pytest tests/unit/
 
-## Caching
+# Test coverage report
+pytest --cov=app tests/
+```
 
-- Development: Simple in-memory cache
-- Production: Redis backend
-- Default timeout: 5 minutes
+### Test Structure
+```
+tests/
+├── __init__.py
+├── conftest.py
+├── functional/
+│   ├── __init__.py
+│   └── test_routes.py
+├── unit/
+│   ├── __init__.py
+│   └── test_services.py
+└── scripts/
+    └── check_routes.py
+```
 
-## Logging
+## Dependencies
 
-- Development: DEBUG level, `logs/development.log`
-- Production: WARNING level, `/var/log/app/app.log`
-- Format: `%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]`
+### Core Flask Framework
+- Flask==3.1.0
+- Werkzeug==3.1.3
+- Jinja2==3.1.5
+- click==8.1.8
+- itsdangerous==2.2.0
+- blinker==1.9.0
+
+### Flask Extensions
+- Flask-JWT-Extended==4.7.1
+- Flask-Login==0.6.3
+- Flask-Limiter==3.9.2
+- Flask-Talisman==1.1.0
+- Flask-WTF==1.2.2
+- Flask-SQLAlchemy==3.1.1
+- Flask-Migrate==4.0.5
+- Flask-Caching==2.1.0
+- Flask-Mail==0.9.1
+
+[Full dependency list in requirements.txt]
 
 ## Production Deployment
 
@@ -165,560 +383,27 @@ LOG_LEVEL=DEBUG
 5. Set up HTTPS
 6. Configure database connection pool
 
-## Dependencies
-
-The project uses various Python packages categorized by their purpose:
-
-### Core Flask Framework
-- `Flask==3.1.0` - Web framework
-- `Werkzeug==3.1.3` - WSGI utility library
-- `Jinja2==3.1.5` - Template engine
-- `click==8.1.8` - Command-line interface
-- `itsdangerous==2.2.0` - Security helpers
-- `blinker==1.9.0` - Signals support
-
-### Flask Extensions
-- `Flask-JWT-Extended==4.7.1` - JWT authentication
-- `Flask-Login==0.6.3` - User session management
-- `Flask-Limiter==3.9.2` - Rate limiting
-- `Flask-Talisman==1.1.0` - Security headers
-- `Flask-WTF==1.2.2` - Form handling and CSRF
-- `Flask-SQLAlchemy==3.1.1` - ORM integration
-- `Flask-Migrate==4.0.5` - Database migrations
-- `Flask-Caching==2.1.0` - Caching support
-- `Flask-Mail==0.9.1` - Email support
-
-### Database and ORM
-- `SQLAlchemy==2.0.25` - SQL toolkit and ORM
-- `alembic==1.13.1` - Database migration tool
-- `psycopg2-binary==2.9.9` - PostgreSQL adapter
-
-### Security
-- `PyJWT==2.8.0` - JSON Web Token implementation
-- `cryptography==42.0.5` - Cryptographic recipes
-- `bcrypt==4.1.2` - Password hashing
-- `python-dotenv==1.0.1` - Environment variable management
-- `WTForms==3.1.2` - Form validation
-
-### Rate Limiting and Caching
-- `limits==3.13.0` - Rate limiting utilities
-- `redis==5.0.2` - Redis client
-- `cachelib==0.9.0` - Caching library
-
-### API and Serialization
-- `marshmallow==3.20.2` - Object serialization/deserialization
-- `webargs==8.4.0` - Request parsing
-- `apispec==6.4.0` - API documentation
-
-### Testing
-- `pytest==8.0.2` - Testing framework
-- `pytest-cov==4.1.0` - Coverage reporting
-- `pytest-flask==1.3.0` - Flask testing utilities
-- `coverage==7.4.1` - Code coverage measurement
-
-### Development Tools
-- `black==24.2.0` - Code formatter
-- `flake8==7.0.0` - Code linter
-- `isort==5.13.2` - Import sorter
-- `mypy==1.8.0` - Static type checker
-
-### Production
-- `gunicorn==21.2.0` - WSGI HTTP Server
-- `supervisor==4.2.5` - Process control system
-- `python-dateutil==2.9.0` - Date utilities
-- `pytz==2024.1` - Timezone support
-
-### Utilities
-- `email-validator==2.1.1` - Email validation
-- `Pillow==9.5.0` - Image processing
-- `requests==2.31.0` - HTTP library
-- `rich==13.9.4` - Rich text formatting
-- `python-slugify==8.0.4` - URL slug generation
-
-### Documentation
-- `Sphinx==7.2.6` - Documentation generator
-- `sphinx-rtd-theme==2.0.0` - Documentation theme
-
-### Installation Options
-
-```bash
-# Install all dependencies
-pip install -r requirements.txt
-
-# Install minimal (core only)
-pip install -r requirements.txt --no-deps
-
-# Install production dependencies (excluding dev tools)
-pip install -r requirements.txt --no-dev
-```
-
-## Testing
-
-The project includes a comprehensive test suite organized into different categories and utility scripts for route checking.
-
-### Test Structure
-```
-tests/
-├── __init__.py                     # Test package initialization
-├── conftest.py                     # Shared test fixtures
-├── functional/                     # Functional/Integration tests
-│   ├── __init__.py
-│   └── test_routes.py             # Route testing
-├── unit/                          # Unit tests
-│   ├── __init__.py
-│   ├── test_content_blocks.py     # Content block testing
-│   ├── test_content_validation.py # Content validation testing
-│   ├── test_error_handlers.py     # Error handler testing
-│   └── test_services.py          # Service testing
-└── scripts/                       # Test utilities
-    └── check_routes.py           # Interactive route checker
-```
-
-### Running Tests
-
-1. **Run Complete Test Suite**:
-```bash
-pytest
-```
-
-2. **Run Tests by Category**:
-```bash
-# Functional tests only
-pytest tests/functional/
-
-# Unit tests only
-pytest tests/unit/
-
-# Specific test file
-pytest tests/functional/test_routes.py
-```
-
-3. **Test Coverage Report**:
-```bash
-pytest --cov=app tests/
-```
-
-### Route Checker Utility
-
-The project includes an interactive route checker script to verify endpoint accessibility.
-
-1. **Start the Flask Application**:
-```bash
-python run.py run
-```
-
-2. **Run Route Checker** (in another terminal):
-```bash
-# Check public routes
-python scripts/check_routes.py
-
-# Check with authentication
-python scripts/check_routes.py --auth
-
-# Check with custom port
-python scripts/check_routes.py --port 8000
-```
-
-The route checker will test:
-- Public Routes
-- Protected Routes (requiring authentication)
-- API Routes
-- Dynamic Routes (with URL parameters)
-
-Results are displayed in a color-coded table:
-- 🟢 Green: Success (200, 201)
-- 🟡 Yellow: Redirect (302) or Unauthorized (401)
-- 🔴 Red: Not Found (404) or Error
-
-### Test Categories
-
-1. **Functional Tests** (`tests/functional/`):
-   - Route accessibility
-   - Authentication flows
-   - Authorization checks
-   - Dynamic route parameters
-   - API endpoints
-
-2. **Unit Tests** (`tests/unit/`):
-   - Content block handling
-   - Content validation
-   - Error handlers
-   - Service functions
-   - Data processing
-
-### Test Configuration
-
-The test suite uses different configurations for various environments:
-
-1. **Development Testing**:
-   - SQLite database
-   - Debug mode enabled
-   - Detailed error messages
-   - In-memory caching
-
-2. **Production Testing**:
-   - Mocked external services
-   - Strict security checks
-   - Performance monitoring
-   - Error logging
-
-### Writing New Tests
-
-1. **Unit Tests**:
-```python
-def test_my_function():
-    # Arrange
-    input_data = {...}
-    
-    # Act
-    result = my_function(input_data)
-    
-    # Assert
-    assert result == expected_output
-```
-
-2. **Functional Tests**:
-```python
-def test_my_route(client):
-    # Arrange
-    data = {...}
-    
-    # Act
-    response = client.post('/my-route', json=data)
-    
-    # Assert
-    assert response.status_code == 200
-    assert response.json['key'] == expected_value
-```
-
-### Test Fixtures
-
-Common test fixtures are available in `conftest.py`:
-- `client`: Flask test client
-- `auth_client`: Authenticated test client
-- `admin_client`: Admin-authenticated client
-- `api_client`: API test client with JWT token
-
-### Continuous Integration
-
-The test suite is integrated with CI/CD:
-1. All tests run on pull requests
-2. Coverage reports are generated
-3. Test results are posted to PR comments
-4. Failed tests block merging
-
-For more detailed information about specific test categories or writing new tests, see the documentation in the respective test directories.
-
-## Default Credentials
-
-The application comes with a default admin user for initial setup:
-
-```
-Username: admin123
-Password: Admin@123
-Role: admin
-Email: admin@example.com
-```
-
-**Important Security Notes**:
-1. Change these credentials immediately after first login
-2. Create new admin accounts for production use
-3. Disable or delete the default admin account in production
-
-The default admin account has the following permissions:
-- Manage Users
-- Manage Content
-- View Analytics
-- Manage Settings
-
-## Quick Start Guide
-
-### 1. Initial Setup
-
-```bash
-# Clone the repository (if not already done)
-git clone <repository-url>
-cd Flask_Project
-
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Initialize the project
-python run.py init
-```
-
-### 2. Start the Application
-
-```bash
-# Start the development server
-python run.py run
-```
-
-The server will start at `http://localhost:5000`
-
-### 3. Test the Routes
-
-In another terminal:
-```bash
-# Check all routes
-python scripts/check_routes.py
-```
-
-### 4. Default Login
-
-You can access the application using these default credentials:
-
-```
-URL: http://localhost:5000/auth/login
-Username: admin123
-Password: Admin@123
-```
-
-### 5. Available Routes
-
-#### Public Routes
-- `GET /` - Home page
-- `GET /auth/login` - Login page
-- `GET /auth/register` - Registration page
-- `GET /subjects` - Subject listing
-
-#### Protected Routes (Requires Login)
-- `GET /dashboard` - User dashboard
-- `GET /subject/<id>` - Subject details
-- `GET /admin/dashboard` - Admin dashboard
-- `GET /admin/users` - User management
-- `GET /admin/subjects` - Subject management
-
-#### Admin Routes
-- `GET /admin/dashboard` - Admin dashboard
-- `GET /admin/users` - User management
-- `GET /admin/subjects` - Subject management
-- `GET /admin/add_user` - Add new user
-- `GET /admin/edit_user` - Edit user
-- `GET /admin/delete_user` - Delete user
-- `GET /admin/change_password` - Change password
-
-#### Content Management Routes
-- `GET /admin/subjects/<subject_id>/sections` - Manage sections
-- `GET /admin/subjects/<subject_id>/sections/add` - Add section
-- `GET /admin/subjects/<subject_id>/sections/<section_id>` - Edit section
-- `GET /admin/subjects/<subject_id>/sections/<section_id>/delete` - Delete section
-
-#### API Routes (Requires JWT Token)
-- `GET /api/subjects` - List all subjects
-- `GET /api/subjects/<id>` - Get subject details
-- `POST /api/subjects` - Create new subject
-- `GET /api/users` - List all users
-- `GET /api/sections/<id>` - Get section details
-- `POST /api/sections/<id>/topics` - Create new topic
-
-### 6. Testing Different User Types
-
-1. **Admin Access**:
-```bash
-# Test admin routes
-python scripts/check_routes.py --auth
-```
-
-2. **API Access**:
-```bash
-# First get JWT token
-curl -X POST http://localhost:5000/auth/login \
-     -H "Content-Type: application/json" \
-     -d '{"username": "admin123", "password": "Admin@123"}'
-
-# Use token in subsequent requests
-curl http://localhost:5000/api/subjects \
-     -H "Authorization: Bearer <your-token>"
-```
-
-### 7. Common Operations
-
-1. **User Management**:
-   - Add User: `/admin/add_user`
-   - Edit User: `/admin/edit_user`
-   - Delete User: `/admin/delete_user`
-
-2. **Content Management**:
-   - Add Subject: `/admin/add_subject`
-   - Add Section: `/admin/subjects/<id>/sections/add`
-   - Add Topic: `/admin/subjects/<id>/sections/<id>/topics/add`
-
-3. **System Management**:
-   - View Logs: `logs/development.log`
-   - Check Sessions: `/admin/sessions`
-   - Monitor Activity: `/admin/dashboard`
-
-### 8. Development Tools
-
-1. **Route Testing**:
-```bash
-# Test all routes
-python scripts/check_routes.py
-
-# Test with authentication
-python scripts/check_routes.py --auth
-
-# Test specific port
-python scripts/check_routes.py --port 8000
-```
-
-2. **Database Operations**:
-```bash
-# Initialize database
-flask db init
-
-# Create migration
-flask db migrate
-
-# Apply migration
-flask db upgrade
-```
-
-3. **Logging**:
-```bash
-# View logs
-tail -f logs/development.log
-```
-
-### 9. Troubleshooting
-
-1. **Server Issues**:
-   - Check if Redis is running (for production)
-   - Verify database connection
-   - Check log files for errors
-
-2. **Authentication Issues**:
-   - Verify credentials in `users.json`
-   - Check session configuration
-   - Validate JWT token expiration
-
-3. **Permission Issues**:
-   - Verify user role in database
-   - Check permission settings
-   - Review access logs
-
-## Template Structure
-
-The application uses a well-organized template structure divided into different sections:
-
-### Admin Templates (`/templates/admin/`)
-
-1. **admin_dashboard.html**
-   - Main admin control panel interface
-   - Statistics cards (Users, Subjects, Sessions)
-   - Recent User Activity panel
-   - System Status monitoring
-   - Active Sessions management
-
-2. **manage_users.html**
-   - User management interface
-   - CRUD operations for users
-   - Role management
-   - Password management
-   - User status tracking
-
-3. **manage_subjects.html**
-   - Subject management interface
-   - Subject CRUD operations
-   - Section management integration
-   - Content organization
-
-4. **manage_sections.html**
-   - Section management within subjects
-   - Ordering system
-   - Topic integration
-   - Content organization
-
-5. **manage_topics.html**
-   - Topic management within sections
-   - Content block management
-   - Multiple content types support
-   - Topic ordering system
-
-### Authentication Templates (`/templates/auth/`)
-
-1. **login.html**
-   - User login interface
-   - Form validation
-   - Error handling
-   - Registration redirect
-
-2. **register.html**
-   - User registration interface
-   - Form validation
-   - Password requirements
-   - Login redirect
-
-### Dashboard Templates (`/templates/dashboard/`)
-
-1. **dashboard.html**
-   - User dashboard interface
-   - Profile overview
-   - Recent activity tracking
-   - Navigation menu
-
-### Error Templates (`/templates/errors/`)
-
-1. **error.html**
-   - Centralized error handling
-   - Custom error pages
-   - User-friendly messages
-   - Navigation recovery
-
-### Public Templates (`/templates/public/`)
-
-1. **home.html**
-   - Main landing page
-   - Feature highlights
-   - Call-to-action elements
-   - User onboarding
-
-2. **index.html**
-   - Alternative landing page
-   - Subject catalog
-   - Authentication integration
-   - Modern design elements
-
-3. **subject_detail.html**
-   - Subject information display
-   - Section organization
-   - Topic listing
-   - Learning path visualization
-
-### Common Features
-
-1. **Navigation**
-   - Consistent top navigation bar
-   - User dropdown menu
-   - Breadcrumb navigation
-   - Mobile-responsive menu
-
-2. **Security**
-   - CSRF protection
-   - Authentication checks
-   - Role-based access
-   - Form validation
-
-3. **UI Components**
-   - Bootstrap 4.5.2
-   - Font Awesome 5.15.4
-   - Modal dialogs
-   - Responsive cards
-
-4. **Error Handling**
-   - Flash messages
-   - Form validation
-   - Error states
-   - User feedback
-
-5. **Styling**
-   - Custom animations
-   - Consistent theming
-   - Mobile-first design
-   - Accessibility features
-
+## Troubleshooting
+
+### Common Issues
+1. **Template Not Found**
+   - Check template directory structure
+   - Verify template_folder path
+
+2. **Database Access**
+   - Check file permissions
+   - Verify JSON file structure
+
+3. **Authentication Issues**
+   - Verify JWT secret key
+   - Check token expiration
+   - Validate CSRF token configuration
+
+### Browser Compatibility
+- Supported browsers:
+  - Chrome (recommended)
+  - Firefox
+  - Safari
+  - Edge
+
+For additional support or questions, please refer to the documentation in the respective directories or contact the system administrator. 

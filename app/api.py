@@ -288,6 +288,9 @@ def get_section(subject_id, section_id):
         if not validate_subject_id(subject_id):
             return jsonify({'error': 'Invalid subject ID'}), 400
             
+        if not validate_section_id(section_id):
+            return jsonify({'error': 'Invalid section ID'}), 400
+            
         subjects_data = load_data('subject_database.json')
         subject = next((s for s in subjects_data.get('subjects', []) if s.get('id') == subject_id), None)
         
@@ -321,6 +324,12 @@ def get_topic(subject_id, section_id, topic_id):
     try:
         if not validate_subject_id(subject_id):
             return jsonify({'error': 'Invalid subject ID'}), 400
+            
+        if not validate_section_id(section_id):
+            return jsonify({'error': 'Invalid section ID'}), 400
+            
+        if not validate_topic_id(topic_id):
+            return jsonify({'error': 'Invalid topic ID'}), 400
             
         subjects_data = load_data('subject_database.json')
         subject = next((s for s in subjects_data.get('subjects', []) if s.get('id') == subject_id), None)

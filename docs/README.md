@@ -1,194 +1,202 @@
-# Documentation Guide
+# Documentation Generation Guide
 
-This guide explains how to create, build, and maintain documentation for the Flask Auth Service project using Sphinx.
-
-## Directory Structure
-
-```
-docs/
-├── Makefile              # Build automation file
-├── build/                # Generated documentation files
-├── source/               # Documentation source files
-│   ├── _static/         # Static files (images, custom CSS, etc.)
-│   ├── _templates/      # Custom HTML templates
-│   ├── conf.py          # Sphinx configuration file
-│   ├── index.rst        # Main documentation page
-│   └── tests.rst        # Test documentation
-└── README.md            # This file
-```
+This guide explains how to generate and maintain documentation for the Flask Project test suite using Sphinx.
 
 ## Setup Instructions
 
 1. Install required packages:
-   ```bash
-   pip install sphinx sphinx-rtd-theme
-   ```
+```bash
+pip install sphinx sphinx-rtd-theme
+```
 
-2. Create new documentation for a module:
-   ```bash
-   cd docs
-   sphinx-quickstart  # If starting a new documentation project
-   ```
+2. Create documentation directory structure:
+```bash
+mkdir docs
+cd docs
+mkdir _static _templates _build
+```
 
-## Building Documentation
+3. Create configuration file (`conf.py`):
+```python
+import os
+import sys
+sys.path.insert(0, os.path.abspath('..'))
 
-1. Build HTML documentation:
-   ```bash
-   cd docs
-   make html
-   ```
+project = 'Flask Project Tests'
+copyright = '2024'
+author = 'Project Team'
 
-2. View the documentation:
-   - Open `docs/build/html/index.html` in a web browser
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
+    'sphinx_rtd_theme',
+]
 
-## Adding New Documentation
+templates_path = ['_templates']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-### 1. Add New RST Files
+html_theme = 'sphinx_rtd_theme'
+html_static_path = ['_static']
+```
 
-Create a new `.rst` file in `source/` directory:
+4. Create main documentation file (`index.rst`):
 ```rst
-Module Name
-==========
+Flask Project Test Documentation
+==============================
 
-Description of the module.
+Welcome to the Flask Project test documentation. This documentation covers the test suites
+for various components of the Flask application.
 
-.. automodule:: path.to.your.module
+Contents
+--------
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Test Suites:
+
+   tests/models
+   tests/routes/admin
+   tests/routes/api
+
+Model Tests
+----------
+
+.. automodule:: tests.models.test_models
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Admin Route Tests
+---------------
+
+.. automodule:: tests.unit.routes.test_admin
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+API Route Tests
+-------------
+
+.. automodule:: tests.unit.routes.test_api
    :members:
    :undoc-members:
    :show-inheritance:
 ```
 
-### 2. Update index.rst
+## Writing Documentation
 
-Add your new file to the toctree in `index.rst`:
-```rst
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   tests
-   your_new_file
-```
-
-### 3. Writing Docstrings
-
-Use Google-style docstrings in your Python code:
+### Docstring Format
+Use the following format for documenting test files, classes, and functions:
 
 ```python
-def function_name(param1: type, param2: type) -> return_type:
-    """Short description.
+"""
+[Brief description]
 
-    Longer description if needed.
+[Detailed description]
 
-    Args:
-        param1: Description of param1
-        param2: Description of param2
+Args:
+    arg_name (type): description
 
+Returns:
+    type: description
+
+Raises:
+    Exception: description
+"""
+```
+
+### Example Test File Documentation
+```python
+"""
+Test module for models.py
+
+This module contains unit tests for the User model class. It verifies:
+- User object creation and attribute assignment
+- User authentication and authorization functionality
+- Data conversion and serialization methods
+- Flask-Login UserMixin integration
+
+The tests use pytest fixtures to provide sample user data for both regular and admin users.
+"""
+
+@pytest.fixture
+def sample_data():
+    """
+    Create sample data for testing.
+    
     Returns:
-        Description of return value
-
-    Raises:
-        ErrorType: Description of when this error is raised
+        dict: A dictionary containing test data with specific fields
     """
     pass
+
+class TestClass:
+    """
+    Test suite for specific functionality.
+    
+    This class contains tests that verify specific aspects of the application.
+    Each test method focuses on a particular feature or behavior.
+    """
+
+    def test_method(self):
+        """
+        Test specific functionality.
+        
+        Verifies that [what is being tested] works correctly by
+        [how it is being tested].
+        """
+        pass
 ```
 
-## Configuration
+## Building Documentation
 
-The documentation uses the following Sphinx extensions:
-
-- `sphinx.ext.autodoc`: Automatically include documentation from docstrings
-- `sphinx.ext.napoleon`: Support for Google-style docstrings
-- `sphinx.ext.viewcode`: Add links to highlighted source code
-- `sphinx.ext.coverage`: Check documentation coverage
-
-Configure these in `source/conf.py`.
-
-## Theme Customization
-
-The documentation uses the Read the Docs theme. Customize it in `conf.py`:
-
-```python
-html_theme = 'sphinx_rtd_theme'
-html_theme_options = {
-    'navigation_depth': 4,
-    'collapse_navigation': False,
-    'sticky_navigation': True,
-}
+1. Generate HTML documentation:
+```bash
+cd docs
+sphinx-build -b html . _build/html
 ```
 
-## Best Practices
+2. View documentation by opening `docs/_build/html/index.html` in a web browser.
 
-1. **Documentation Structure**:
-   - Keep related topics together
-   - Use clear, descriptive headings
-   - Include examples where appropriate
+## Maintaining Documentation
 
-2. **Writing Style**:
-   - Be clear and concise
-   - Use consistent terminology
-   - Include code examples for complex features
+1. Keep docstrings up to date when modifying tests
+2. Follow the established docstring format
+3. Rebuild documentation after making changes
+4. Commit both code and documentation changes
 
-3. **Code Documentation**:
-   - Document all public APIs
-   - Include type hints
-   - Explain parameters and return values
-   - Document exceptions and edge cases
+## Documentation Structure
 
-4. **Maintenance**:
-   - Update docs when code changes
-   - Check for broken links
-   - Verify examples work
-   - Run `make html` to check for errors
+The documentation is organized as follows:
+- `docs/`: Main documentation directory
+  - `_static/`: Static files (CSS, images)
+  - `_templates/`: Custom templates
+  - `_build/`: Generated documentation
+  - `conf.py`: Sphinx configuration
+  - `index.rst`: Main documentation file
 
-## Common Tasks
+## Tips for Good Documentation
 
-### Adding a New Test Module
+1. Write clear and concise descriptions
+2. Include examples where helpful
+3. Document both success and failure cases in tests
+4. Keep documentation in sync with code
+5. Use proper formatting for code snippets
+6. Include all necessary imports and dependencies
+7. Document any special setup required for tests
 
-1. Create test file with proper docstrings
-2. Create new RST file in `source/`
-3. Add to `index.rst` toctree
-4. Update test documentation sections
+## Automatic Documentation
 
-### Updating Existing Documentation
-
-1. Modify relevant RST files
-2. Update docstrings in code
-3. Rebuild documentation:
-   ```bash
-   make clean
-   make html
-   ```
-
-### Adding Images
-
-1. Place images in `source/_static/`
-2. Reference in RST files:
-   ```rst
-   .. image:: _static/image_name.png
-      :alt: Alternative text
-   ```
+To automate documentation generation, you can:
+1. Add it to your CI/CD pipeline
+2. Create a pre-commit hook
+3. Include it in your build process
 
 ## Troubleshooting
 
-Common issues and solutions:
-
-1. **Missing Modules**:
-   - Check `sys.path` in `conf.py`
-   - Verify module is importable
-
-2. **Build Errors**:
-   - Check syntax in RST files
-   - Verify docstring format
-   - Look for missing dependencies
-
-3. **Autodoc Issues**:
-   - Verify module path is correct
-   - Check import statements
-   - Ensure docstrings are properly formatted
-
-## Additional Resources
-
-- [Sphinx Documentation](https://www.sphinx-doc.org/)
-- [reStructuredText Guide](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html)
-- [Read the Docs Theme](https://sphinx-rtd-theme.readthedocs.io/) 
+If you encounter issues:
+1. Ensure all required packages are installed
+2. Check file paths in `conf.py`
+3. Verify docstring formatting
+4. Look for missing dependencies
+5. Check console output for specific errors 

@@ -158,7 +158,7 @@ def dashboard():
         # Get recent activities (last 5 logins)
         recent_activities = []
         for user in sorted(users_data.get('users', []), 
-                          key=lambda x: x.get('last_login', ''), 
+                          key=lambda x: datetime.fromisoformat(x.get('last_login')) if x.get('last_login') else datetime.min.replace(tzinfo=UTC), 
                           reverse=True)[:5]:
             if user.get('last_login'):
                 recent_activities.append({
