@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Subject{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-2">Edit Subject</h1>
+            <p class="text-muted">Update subject details and content</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Subject Name</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{{ subject.name }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="4" required>{{ subject.description }}</textarea>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    <option value="">Select Category</option>
+                                    <option value="programming" {% if subject.category == 'programming' %}selected{% endif %}>
+                                        Programming
+                                    </option>
+                                    <option value="design" {% if subject.category == 'design' %}selected{% endif %}>
+                                        Design
+                                    </option>
+                                    <option value="business" {% if subject.category == 'business' %}selected{% endif %}>
+                                        Business
+                                    </option>
+                                    <option value="marketing" {% if subject.category == 'marketing' %}selected{% endif %}>
+                                        Marketing
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="level" class="form-label">Level</label>
+                                <select class="form-select" id="level" name="level" required>
+                                    <option value="">Select Level</option>
+                                    <option value="beginner" {% if subject.level == 'beginner' %}selected{% endif %}>
+                                        Beginner
+                                    </option>
+                                    <option value="intermediate" {% if subject.level == 'intermediate' %}selected{% endif %}>
+                                        Intermediate
+                                    </option>
+                                    <option value="advanced" {% if subject.level == 'advanced' %}selected{% endif %}>
+                                        Advanced
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="thumbnail" class="form-label">Thumbnail Image</label>
+                            {% if subject.thumbnail %}
+                                <div class="mb-2">
+                                    <img src="{{ url_for('static', filename='img/subjects/' + subject.thumbnail) }}" 
+                                         class="rounded" width="100" height="100" alt="{{ subject.name }}">
+                                </div>
+                            {% endif %}
+                            <input type="file" class="form-control" id="thumbnail" name="thumbnail" accept="image/*">
+                            <small class="text-muted">Leave empty to keep current image</small>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="is_published" name="is_published"
+                                   {% if subject.is_published %}checked{% endif %}>
+                            <label class="form-check-label" for="is_published">Published</label>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin.subjects') }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Subject Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Created</label>
+                        <div>{{ subject.created_at|datetime }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Last Updated</label>
+                        <div>{{ subject.updated_at|datetime }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Enrolled Students</label>
+                        <div>{{ subject.enrolled_users|length }}</div>
+                    </div>
+                    <div>
+                        <label class="form-label text-muted">Total Sections</label>
+                        <div>{{ subject.sections|length }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Danger Zone</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Delete this subject and all its content</p>
+                    <button type="button" class="btn btn-danger" 
+                            onclick="confirmDelete('{{ subject.id }}', '{{ subject.name }}')">
+                        Delete Subject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Subject</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete "<span id="subjectName"></span>"?</p>
+                <p class="text-danger mb-0">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+function confirmDelete(subjectId, subjectName) {
+    const modal = document.getElementById('deleteModal');
+    const deleteForm = document.getElementById('deleteForm');
+    const subjectNameSpan = document.getElementById('subjectName');
+    
+    deleteForm.action = "{{ url_for('admin.delete_subject', subject_id='') }}" + subjectId;
+    subjectNameSpan.textContent = subjectName;
+    
+    new bootstrap.Modal(modal).show();
+}
+</script>
+{% endblock %} 

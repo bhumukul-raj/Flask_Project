@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-2">Admin Dashboard</h1>
+            <p class="text-muted">Overview of your learning platform</p>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Total Users -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="text-muted">Total Users</div>
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-2">
+                            <i class="fas fa-users text-primary"></i>
+                        </div>
+                    </div>
+                    <h3 class="mb-0">{{ stats.total_users }}</h3>
+                    <div class="small text-success mt-2">
+                        <i class="fas fa-arrow-up"></i> {{ stats.new_users_today }} new today
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Users -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="text-muted">Active Users</div>
+                        <div class="bg-success bg-opacity-10 rounded-circle p-2">
+                            <i class="fas fa-user-check text-success"></i>
+                        </div>
+                    </div>
+                    <h3 class="mb-0">{{ stats.active_users }}</h3>
+                    <div class="small text-muted mt-2">
+                        Last 24 hours
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Subjects -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="text-muted">Total Subjects</div>
+                        <div class="bg-info bg-opacity-10 rounded-circle p-2">
+                            <i class="fas fa-book text-info"></i>
+                        </div>
+                    </div>
+                    <h3 class="mb-0">{{ stats.total_subjects }}</h3>
+                    <div class="small text-success mt-2">
+                        <i class="fas fa-arrow-up"></i> {{ stats.new_subjects_week }} this week
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Enrollments -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="text-muted">Total Enrollments</div>
+                        <div class="bg-warning bg-opacity-10 rounded-circle p-2">
+                            <i class="fas fa-user-graduate text-warning"></i>
+                        </div>
+                    </div>
+                    <h3 class="mb-0">{{ stats.total_enrollments }}</h3>
+                    <div class="small text-success mt-2">
+                        <i class="fas fa-arrow-up"></i> {{ stats.new_enrollments_today }} today
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity and Popular Subjects -->
+    <div class="row g-4">
+        <!-- Recent Activity -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Recent Activity</h5>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Subject</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in stats.recent_activities %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if activity.user.profile.avatar %}
+                                                <img src="{{ activity.user.profile.avatar }}" class="rounded-circle me-2" width="32" height="32">
+                                            {% else %}
+                                                <div class="bg-light rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                    <i class="fas fa-user text-muted"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-bold">{{ activity.user.username }}</div>
+                                                <small class="text-muted">{{ activity.user.email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ activity.action }}</td>
+                                    <td>{{ activity.subject }}</td>
+                                    <td>{{ activity.timestamp|datetime }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popular Subjects -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Popular Subjects</h5>
+                </div>
+                <div class="card-body">
+                    {% for subject in stats.popular_subjects %}
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="mb-1">{{ subject.name }}</h6>
+                            <small class="text-muted">{{ subject.category }}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold">{{ subject.enrolled_count }}</div>
+                            <small class="text-muted">students</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

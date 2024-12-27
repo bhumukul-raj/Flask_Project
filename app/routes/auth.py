@@ -7,6 +7,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from ..services.data_service import load_data, save_data
 from ..models import User
+from ..forms.auth_forms import LoginForm, RegistrationForm
 import uuid
 from datetime import datetime
 
@@ -17,27 +18,24 @@ def login():
     """Login page."""
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
-        
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        remember = request.form.get('remember') == 'true'
-        
+    
+    form = LoginForm()
+    if form.validate_on_submit():
         users_data = load_data('users.json')
         user_data = next(
-            (user for user in users_data.get('users', []) if user['username'] == username),
+            (user for user in users_data.get('users', []) if user['username'] == form.username.data),
             None
         )
         
-        if user_data and check_password_hash(user_data['password'], password):
+        if user_data and check_password_hash(user_data['password'], form.password.data):
             user = User(user_data)
-            login_user(user, remember=remember)
+            login_user(user, remember=form.remember_me.data)
             next_page = request.args.get('next')
             return redirect(next_page or url_for('main.dashboard'))
             
         flash('Invalid username or password', 'error')
         
-    return render_template('auth/login.html')
+    return render_template('auth/login.html', form=form)
 
 @auth.route('/logout')
 @login_required
@@ -49,47 +47,39 @@ def logout():
 
 @auth.route('/register', methods=['GET', 'POST'])
 def register():
-    """Registration page."""
+    """Register page."""
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
         
-    if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        
-        if password != confirm_password:
-            flash('Passwords do not match', 'error')
-            return redirect(url_for('auth.register'))
-            
+    form = RegistrationForm()
+    if form.validate_on_submit():
         users_data = load_data('users.json')
         users = users_data.get('users', [])
         
-        # Check if username already exists
-        if any(user['username'] == username for user in users):
+        # Check if username exists
+        if any(user['username'] == form.username.data for user in users):
             flash('Username already exists', 'error')
-            return redirect(url_for('auth.register'))
+            return render_template('auth/register.html', form=form)
             
         # Create new user
         new_user = {
             'id': str(uuid.uuid4()),
-            'username': username,
-            'email': email,
-            'password': generate_password_hash(password),
-            'is_admin': False,
-            'is_active': True,
-            'created_at': datetime.utcnow().isoformat()
+            'username': form.username.data,
+            'email': form.email.data,
+            'password': generate_password_hash(form.password.data),
+            'role': 'user',
+            'created_at': datetime.utcnow().isoformat(),
+            'last_login': None
         }
         
         users.append(new_user)
-        users_data['users'] = users
-        save_data('users.json', users_data)
-        
-        flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('auth.login'))
-        
-    return render_template('auth/register.html')
+        if save_data('users.json', {'users': users}):
+            flash('Registration successful! Please login.', 'success')
+            return redirect(url_for('auth.login'))
+        else:
+            flash('Error creating account', 'error')
+            
+    return render_template('auth/register.html', form=form)
 
 @auth.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():

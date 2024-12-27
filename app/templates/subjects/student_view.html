@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Available Subjects{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Available Subjects</h2>
+            <p class="text-muted">Browse and enroll in our available subjects</p>
+        </div>
+    </div>
+
+    <!-- Categories -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Categories</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="#" class="btn btn-outline-primary btn-sm active">All</a>
+                        {% for category in categories %}
+                            <a href="#{{ category.id }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-{{ category.icon }}"></i> {{ category.name }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subjects Grid -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for subject in subjects %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    {% if subject.thumbnail %}
+                        <img src="{{ url_for('static', filename='img/subjects/' + subject.thumbnail) }}" 
+                             class="card-img-top" alt="{{ subject.name }}">
+                    {% else %}
+                        <div class="card-img-top bg-light text-center py-4">
+                            <i class="fas fa-book fa-3x text-muted"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">{{ subject.name }}</h5>
+                            <span class="badge bg-{{ 'success' if subject.id in enrolled_subject_ids else 'primary' }}">
+                                {{ 'Enrolled' if subject.id in enrolled_subject_ids else subject.level }}
+                            </span>
+                        </div>
+                        <p class="card-text text-muted">{{ subject.description }}</p>
+                        
+                        <!-- Subject Details -->
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i> {{ subject.duration }}
+                            </small>
+                            <br>
+                            <small class="text-muted">
+                                <i class="fas fa-tag me-1"></i> {{ subject.category }}
+                            </small>
+                        </div>
+
+                        <!-- Requirements -->
+                        {% if subject.requirements %}
+                            <div class="mb-3">
+                                <h6 class="text-muted">Requirements:</h6>
+                                <ul class="small text-muted mb-0">
+                                    {% for req in subject.requirements %}
+                                        <li>{{ req }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="card-footer bg-white border-top-0">
+                        {% if subject.id in enrolled_subject_ids %}
+                            {% set enrollment = subject.enrolled_users|selectattr('user_id', 'equalto', current_user.id)|first %}
+                            <div class="mb-2">
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ enrollment.progress }}%"
+                                         aria-valuenow="{{ enrollment.progress }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                </div>
+                                <small class="text-muted">{{ enrollment.progress }}% Complete</small>
+                            </div>
+                            <a href="{{ url_for('main.subject_detail', subject_id=subject.id) }}" 
+                               class="btn btn-primary w-100">
+                                <i class="fas fa-arrow-right"></i> Continue Learning
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('main.subject_detail', subject_id=subject.id) }}" 
+                               class="btn btn-outline-primary w-100">
+                                <i class="fas fa-info-circle"></i> View Details
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

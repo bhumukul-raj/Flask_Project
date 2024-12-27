@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Settings{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h4 class="mb-0">Admin Settings</h4>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('admin.update_settings') }}" method="POST">
+                        <!-- Site Settings -->
+                        <h5 class="mb-3">Site Settings</h5>
+                        <div class="mb-3">
+                            <label for="site_name" class="form-label">Site Name</label>
+                            <input type="text" class="form-control" id="site_name" name="site_name"
+                                   value="{{ settings.site_name }}" required>
+                        </div>
+
+                        <!-- System Settings -->
+                        <h5 class="mb-3 mt-4">System Settings</h5>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="maintenance_mode" 
+                                   name="maintenance_mode" {% if settings.maintenance_mode %}checked{% endif %}>
+                            <label class="form-check-label" for="maintenance_mode">
+                                Maintenance Mode
+                            </label>
+                            <small class="form-text text-muted d-block">
+                                When enabled, only administrators can access the site
+                            </small>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="registration_enabled" 
+                                   name="registration_enabled" {% if settings.registration_enabled %}checked{% endif %}>
+                            <label class="form-check-label" for="registration_enabled">
+                                Enable User Registration
+                            </label>
+                            <small class="form-text text-muted d-block">
+                                Allow new users to register on the platform
+                            </small>
+                        </div>
+
+                        <!-- Upload Settings -->
+                        <h5 class="mb-3 mt-4">Upload Settings</h5>
+                        <div class="mb-3">
+                            <label for="max_upload_size" class="form-label">Maximum Upload Size</label>
+                            <input type="text" class="form-control" id="max_upload_size" name="max_upload_size"
+                                   value="{{ settings.max_upload_size }}" required>
+                            <small class="form-text text-muted">
+                                Maximum file size for uploads (e.g., 5MB, 10MB)
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Allowed File Types</label>
+                            <div class="border rounded p-3 bg-light">
+                                {% for type in settings.allowed_file_types %}
+                                    <span class="badge bg-primary me-2">{{ type }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="text-end mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

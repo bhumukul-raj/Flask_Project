@@ -1,0 +1,45 @@
+{
+    "achievements": [
+        {
+            "id": "ach-001",
+            "title": "First Steps",
+            "description": "Complete your first subject",
+            "icon": "first-steps.png",
+            "category": "Progress",
+            "points": 100,
+            "requirements": {
+                "type": "subject_completion",
+                "count": 1
+            }
+        },
+        {
+            "id": "ach-002",
+            "title": "Quick Learner",
+            "description": "Complete 5 subjects",
+            "icon": "quick-learner.png",
+            "category": "Progress",
+            "points": 500,
+            "requirements": {
+                "type": "subject_completion",
+                "count": 5
+            }
+        }
+    ],
+    "user_achievements": [
+        {
+            "user_id": "0d8dc65b-f867-4c52-9c56-8fb09289949c",
+            "achievements": [
+                {
+                    "achievement_id": "ach-001",
+                    "earned_at": "2024-12-27T16:44:28.065211",
+                    "progress": 100
+                }
+            ],
+            "total_points": 100
+        }
+    ],
+    "metadata": {
+        "last_updated": "2024-12-27T16:44:28.065211",
+        "version": "1.0"
+    }
+} 

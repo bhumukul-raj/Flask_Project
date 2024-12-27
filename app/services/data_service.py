@@ -1,198 +1,129 @@
 ﻿"""
-Data Service Module
-
-This module provides data access and manipulation functions for the application.
-It handles all JSON file operations and data validation.
-
-Functions:
-    load_data: Load data from a JSON file
-    save_data: Save data to a JSON file
-    validate_data: Validate data structure before saving
-    validate_content_block: Validate content block structure and content
-
-Note:
-    All functions in this module handle file operations safely and include
-    proper error handling and logging.
+Data service for handling JSON file operations.
 """
 
 import json
-import logging
-from pathlib import Path
-from urllib.parse import urlparse
 import os
-from flask import current_app
+from datetime import datetime
+import logging
 
-# Configure logger for data service
 logger = logging.getLogger(__name__)
 
-# Valid content block types and their constraints
-VALID_BLOCK_TYPES = {
-    'text': {'max_length': 100000},  # 100KB
-    'code': {'max_length': 50000},   # 50KB
-    'image': {
-        'allowed_schemes': {'https'},
-        'max_url_length': 2048,
-        'max_caption_length': 500,
-        'max_alt_length': 500
-    },
-    'table': {
-        'max_headers': 20,
-        'max_rows': 1000,
-        'max_cell_length': 1000
-    }
-}
+# Base paths for different data types
+DATA_DIR = 'data'
+USERS_DIR = os.path.join(DATA_DIR, 'users')
+SUBJECTS_DIR = os.path.join(DATA_DIR, 'subjects')
+ACHIEVEMENTS_DIR = os.path.join(DATA_DIR, 'achievements')
+
+def get_file_path(filename):
+    """Get the full path for a data file."""
+    if filename.startswith('users/'):
+        return os.path.join(DATA_DIR, filename)
+    elif filename.startswith('subjects/'):
+        return os.path.join(DATA_DIR, filename)
+    elif filename.startswith('achievements/'):
+        return os.path.join(DATA_DIR, filename)
+    return os.path.join(DATA_DIR, filename)
 
 def load_data(filename):
     """
-    Load data from a JSON file in the data directory.
-    
+    Load data from a JSON file.
     Args:
-        filename (str): Name of the JSON file to load (e.g., 'users.json')
-        
+        filename: Name of the JSON file (e.g., 'users/users.json')
     Returns:
-        dict: The loaded data if successful, empty dict if file doesn't exist
-        
-    Raises:
-        json.JSONDecodeError: If the file contains invalid JSON
+        dict: Loaded data or empty dict if file doesn't exist
     """
-    file_path = os.path.join(current_app.config['DATA_DIR'], filename)
     try:
-        if os.path.exists(file_path):
-            with open(file_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        return {}
-    except json.JSONDecodeError:
+        file_path = get_file_path(filename)
+        if not os.path.exists(file_path):
+            logger.warning(f"File not found: {file_path}")
+            return {}
+            
+        with open(file_path, 'r') as file:
+            return json.load(file)
+    except Exception as e:
+        logger.error(f"Error loading data from {file_path}: {str(e)}")
         return {}
 
 def save_data(filename, data):
     """
-    Save data to a JSON file in the data directory.
-    
+    Save data to a JSON file.
     Args:
-        filename (str): Name of the JSON file to save to (e.g., 'users.json')
-        data (dict): The data to save
-        
+        filename: Name of the JSON file (e.g., 'users/users.json')
+        data: Data to save
     Returns:
-        bool: True if save was successful, False otherwise
-        
-    Note:
-        This function will create the data directory if it doesn't exist.
+        bool: True if successful, False otherwise
     """
-    file_path = os.path.join(current_app.config['DATA_DIR'], filename)
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=4)
-        logger.info(f'Successfully saved data to {filename}')
+    try:
+        file_path = get_file_path(filename)
+        
+        # Update metadata
+        if isinstance(data, dict):
+            data.setdefault('metadata', {})
+            data['metadata']['last_updated'] = datetime.utcnow().isoformat()
+            data['metadata']['version'] = '1.0'
+        
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        
+        with open(file_path, 'w') as file:
+            json.dump(data, file, indent=4)
         return True
-
-def validate_data(data, schema):
-    """
-    Validate data against a predefined schema.
-    
-    Args:
-        data (dict): The data to validate
-        schema (dict): The schema to validate against
-        
-    Returns:
-        tuple: (bool, str) - (is_valid, error_message)
-    """
-    try:
-        # Basic type checking
-        if not isinstance(data, dict):
-            logger.error('Data validation failed: root must be a dictionary')
-            return False, 'Invalid data structure'
-        
-        # Check required fields
-        for key, value in schema.items():
-            if value.get('required', False) and key not in data:
-                logger.error(f'Data validation failed: missing required field {key}')
-                return False, f'Missing required field: {key}'
-        
-        logger.debug('Data validation successful')
-        return True, None
     except Exception as e:
-        logger.error(f'Error during data validation: {str(e)}')
-        return False, 'Validation error occurred'
+        logger.error(f"Error saving data to {file_path}: {str(e)}")
+        return False
 
-def validate_content_block(block: dict) -> tuple[bool, str]:
-    """
-    Validate content block structure and type.
-    
-    Args:
-        block (dict): The content block to validate
-        
-    Returns:
-        tuple: (bool, str) - (is_valid, error_message)
-    """
+# Convenience functions for common operations
+def get_user(user_id):
+    """Get a user by ID."""
+    users = load_data('users/users.json').get('users', [])
+    return next((user for user in users if user['id'] == user_id), None)
+
+def get_subject(subject_id):
+    """Get a subject by ID."""
+    subjects = load_data('subjects/subjects.json').get('subjects', [])
+    return next((subject for subject in subjects if subject['id'] == subject_id), None)
+
+def get_user_achievements(user_id):
+    """Get achievements for a user."""
+    achievements_data = load_data('achievements/achievements.json')
+    user_achievements = next(
+        (ua for ua in achievements_data.get('user_achievements', [])
+         if ua['user_id'] == user_id),
+        {'achievements': [], 'total_points': 0}
+    )
+    return user_achievements
+
+def update_user_progress(user_id, subject_id, topic_id):
+    """Update a user's progress in a subject."""
     try:
-        if not isinstance(block, dict):
-            logger.error('Content block validation failed: not a dictionary')
-            return False, "Invalid block structure"
-            
-        if 'type' not in block or 'value' not in block:
-            logger.error('Content block validation failed: missing required fields')
-            return False, "Missing required fields"
-            
-        if block['type'] not in VALID_BLOCK_TYPES:
-            logger.error(f'Content block validation failed: invalid type {block.get("type")}')
-            return False, f"Invalid block type: {block['type']}"
-            
-        block_type = block['type']
-        constraints = VALID_BLOCK_TYPES[block_type]
+        subjects_data = load_data('subjects/subjects.json')
+        subject = next((s for s in subjects_data.get('subjects', [])
+                       if s['id'] == subject_id), None)
         
-        if block_type in ['text', 'code']:
-            if not isinstance(block['value'], str):
-                return False, "Value must be a string"
-            if len(block['value'].encode('utf-8')) > constraints['max_length']:
-                return False, f"Content exceeds maximum length of {constraints['max_length']} bytes"
-                
-        elif block_type == 'image':
-            if not isinstance(block['value'], dict):
-                return False, "Image value must be an object"
-            if not all(k in block['value'] for k in ['url', 'caption', 'alt_text']):
-                return False, "Missing required image fields"
-                
-            url = urlparse(block['value']['url'])
-            if url.scheme not in constraints['allowed_schemes']:
-                return False, "Invalid URL scheme"
-            if len(block['value']['url']) > constraints['max_url_length']:
-                return False, "URL too long"
-            if len(block['value']['caption']) > constraints['max_caption_length']:
-                return False, "Caption too long"
-            if len(block['value']['alt_text']) > constraints['max_alt_length']:
-                return False, "Alt text too long"
-                
-        elif block_type == 'table':
-            if not isinstance(block['value'], dict):
-                return False, "Table value must be an object"
-            if not all(k in block['value'] for k in ['headers', 'rows']):
-                return False, "Missing required table fields"
-                
-            headers = block['value']['headers']
-            rows = block['value']['rows']
+        if not subject:
+            return False
             
-            if not isinstance(headers, list) or not isinstance(rows, list):
-                return False, "Headers and rows must be lists"
-            if len(headers) > constraints['max_headers']:
-                return False, "Too many headers"
-            if len(rows) > constraints['max_rows']:
-                return False, "Too many rows"
-                
-            # Check cell lengths
-            for header in headers:
-                if len(str(header)) > constraints['max_cell_length']:
-                    return False, "Header cell too long"
-            for row in rows:
-                if not isinstance(row, list):
-                    return False, "Row must be a list"
-                if len(row) != len(headers):
-                    return False, "Row length must match headers"
-                for cell in row:
-                    if len(str(cell)) > constraints['max_cell_length']:
-                        return False, "Row cell too long"
-                    
-        logger.debug('Content block validation successful')
-        return True, None
+        # Find user enrollment
+        enrollment = next((e for e in subject.get('enrolled_users', [])
+                         if e['user_id'] == user_id), None)
+        
+        if not enrollment:
+            return False
+            
+        # Update completed topics
+        if topic_id not in enrollment['completed_topics']:
+            enrollment['completed_topics'].append(topic_id)
+            
+        # Calculate progress
+        total_topics = sum(len(section['topics']) for section in subject['sections'])
+        completed_topics = len(enrollment['completed_topics'])
+        enrollment['progress'] = round((completed_topics / total_topics) * 100)
+        enrollment['last_activity'] = datetime.utcnow().isoformat()
+        
+        # Save changes
+        return save_data('subjects/subjects.json', subjects_data)
+        
     except Exception as e:
-        logger.error(f'Error during content block validation: {str(e)}')
-        return False, 'Validation error occurred'
+        logger.error(f"Error updating user progress: {str(e)}")
+        return False

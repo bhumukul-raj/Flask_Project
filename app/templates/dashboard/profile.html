@@ -2,180 +2,168 @@
 
 {% block title %}Profile{% endblock %}
 
+{% block styles %}
+<style>
+.thin-progress {
+    height: 5px;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-5">
     <div class="row">
+        <!-- Profile Overview -->
         <div class="col-lg-4">
-            <!-- Profile Card -->
             <div class="card shadow-sm mb-4">
                 <div class="card-body text-center">
-                    <img src="{{ current_user.avatar_url|default('https://via.placeholder.com/150') }}" 
-                         class="rounded-circle mb-3" width="150" height="150" alt="Profile Picture">
-                    <h3 class="h5 mb-2">{{ current_user.username }}</h3>
-                    <p class="text-muted mb-3">Member since {{ current_user.created_at|default('N/A', true) }}</p>
-                    <button class="btn btn-outline-primary btn-sm" onclick="document.getElementById('avatarInput').click()">
-                        <i class="fas fa-camera me-2"></i>Change Picture
-                    </button>
-                    <input type="file" id="avatarInput" class="d-none" accept="image/*">
-                </div>
-            </div>
-
-            <!-- Quick Stats -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h4 class="h6 mb-0">Quick Stats</h4>
-                </div>
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-book text-primary me-2"></i>Subjects Enrolled
-                        </div>
-                        <span class="badge bg-primary rounded-pill">{{ user_stats.subjects_enrolled }}</span>
-                    </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-trophy text-warning me-2"></i>Achievements
-                        </div>
-                        <span class="badge bg-warning rounded-pill">{{ user_stats.achievements }}</span>
-                    </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-clock text-info me-2"></i>Hours Spent
-                        </div>
-                        <span class="badge bg-info rounded-pill">{{ user_stats.hours_spent }}</span>
+                    <img src="{{ url_for('static', filename='img/default-avatar.png') }}" 
+                         alt="Profile Picture" 
+                         class="rounded-circle mb-3" 
+                         style="width: 150px;">
+                    <h4 class="mb-0">{{ current_user.username }}</h4>
+                    <p class="text-muted mb-3">{{ current_user.email }}</p>
+                    <div class="d-flex justify-content-center mb-3">
+                        <span class="badge bg-primary me-2">{{ user.role|title }}</span>
+                        {% if user.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- Statistics -->
         <div class="col-lg-8">
-            <!-- Profile Information -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
-                    <h4 class="h6 mb-0">Profile Information</h4>
+                    <h5 class="mb-0">Learning Statistics</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('main.update_profile') }}" class="needs-validation" novalidate>
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" 
-                                   value="{{ current_user.username }}" required>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">Enrolled Subjects</h6>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">{{ user_stats.subjects_enrolled }}</span>
+                            </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" 
-                                   value="{{ current_user.email }}" required>
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">Completed Subjects</h6>
+                                </div>
+                                <span class="badge bg-success rounded-pill">{{ user_stats.completed_subjects }}</span>
+                            </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="bio" class="form-label">Bio</label>
-                            <textarea class="form-control" id="bio" name="bio" rows="3">{{ current_user.bio }}</textarea>
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">In Progress</h6>
+                                </div>
+                                <span class="badge bg-info rounded-pill">{{ user_stats.in_progress_subjects }}</span>
+                            </div>
                         </div>
-                        
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-2"></i>Save Changes
-                        </button>
-                    </form>
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">Overall Progress</h6>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">{{ user_stats.total_progress }}%</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Change Password -->
+            <!-- Account Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Account Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong>Member Since:</strong><br>
+                                {{ user_stats.join_date|datetime }}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong>Last Login:</strong><br>
+                                {{ user_stats.last_login|datetime if user_stats.last_login != 'Never' else 'Never' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enrolled Subjects -->
+        {% if enrolled_subjects %}
+        <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-header">
-                    <h4 class="h6 mb-0">Change Password</h4>
+                    <h5 class="mb-0">Enrolled Subjects</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('main.change_password') }}" class="needs-validation" novalidate>
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        
-                        <div class="mb-3">
-                            <label for="current_password" class="form-label">Current Password</label>
-                            <input type="password" class="form-control" id="current_password" 
-                                   name="current_password" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="new_password" class="form-label">New Password</label>
-                            <input type="password" class="form-control" id="new_password" 
-                                   name="new_password" required minlength="8">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="confirm_password" class="form-label">Confirm New Password</label>
-                            <input type="password" class="form-control" id="confirm_password" 
-                                   name="confirm_password" required>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-key me-2"></i>Change Password
-                        </button>
-                    </form>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Progress</th>
+                                    <th>Status</th>
+                                    <th>Last Activity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for subject in enrolled_subjects %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('main.subject_detail', subject_id=subject.id) }}" 
+                                           class="text-decoration-none">{{ subject.name }}</a>
+                                    </td>
+                                    <td>
+                                        {% set progress = subject.progress|default(0) %}
+                                        <div class="progress thin-progress">
+                                            <div class="progress-bar" 
+                                                 role="progressbar" 
+                                                 style="width: '%{{ progress }}%'"
+                                                 aria-valuenow="{{ progress }}"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">{{ progress }}%</small>
+                                    </td>
+                                    <td>
+                                        {% if subject.status == 'completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% elif subject.status == 'in_progress' %}
+                                            <span class="badge bg-info">In Progress</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Not Started</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ subject.last_activity|datetime|default('Never') }}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script nonce="{{ csp_nonce }}">
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle avatar upload
-    const avatarInput = document.getElementById('avatarInput');
-    avatarInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const formData = new FormData();
-            formData.append('avatar', file);
-            
-            fetch('{{ url_for('main.upload_avatar') }}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token() }}'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('Failed to upload avatar. Please try again.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while uploading the avatar.');
-            });
-        }
-    });
-
-    // Password match validation
-    const newPassword = document.getElementById('new_password');
-    const confirmPassword = document.getElementById('confirm_password');
-    
-    confirmPassword.addEventListener('input', function() {
-        if (newPassword.value !== confirmPassword.value) {
-            confirmPassword.setCustomValidity('Passwords do not match');
-        } else {
-            confirmPassword.setCustomValidity('');
-        }
-    });
-
-    // Form validation
-    const forms = document.querySelectorAll('.needs-validation');
-    Array.from(forms).forEach(form => {
-        form.addEventListener('submit', function(event) {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            form.classList.add('was-validated');
-        });
-    });
-});
-</script>
 {% endblock %} 

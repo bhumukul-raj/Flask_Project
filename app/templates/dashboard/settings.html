@@ -13,14 +13,11 @@
                         <a href="#account" class="list-group-item list-group-item-action active" data-bs-toggle="list">
                             <i class="fas fa-user-cog me-2"></i>Account Settings
                         </a>
+                        <a href="#password" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                            <i class="fas fa-key me-2"></i>Change Password
+                        </a>
                         <a href="#notifications" class="list-group-item list-group-item-action" data-bs-toggle="list">
                             <i class="fas fa-bell me-2"></i>Notifications
-                        </a>
-                        <a href="#privacy" class="list-group-item list-group-item-action" data-bs-toggle="list">
-                            <i class="fas fa-shield-alt me-2"></i>Privacy
-                        </a>
-                        <a href="#preferences" class="list-group-item list-group-item-action" data-bs-toggle="list">
-                            <i class="fas fa-sliders-h me-2"></i>Preferences
                         </a>
                     </div>
                 </div>
@@ -40,161 +37,92 @@
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 
                                 <div class="mb-3">
-                                    <label class="form-label">Account Type</label>
-                                    <p class="form-control-static">{{ 'Premium' if current_user.is_premium else 'Standard' }}</p>
+                                    <label class="form-label">Username</label>
+                                    <p class="form-control-static">{{ current_user.username }}</p>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <p class="form-control-static">{{ current_user.email }}</p>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="timezone" class="form-label">Timezone</label>
                                     <select class="form-select" id="timezone" name="timezone" required>
-                                        <option value="UTC">UTC</option>
-                                        <option value="America/New_York">Eastern Time</option>
-                                        <option value="America/Chicago">Central Time</option>
-                                        <option value="America/Denver">Mountain Time</option>
-                                        <option value="America/Los_Angeles">Pacific Time</option>
+                                        {% set current_timezone = user.get('settings', {}).get('timezone', 'UTC') %}
+                                        <option value="UTC" {% if current_timezone == 'UTC' %}selected{% endif %}>UTC</option>
+                                        <option value="US/Pacific" {% if current_timezone == 'US/Pacific' %}selected{% endif %}>US/Pacific</option>
+                                        <option value="US/Eastern" {% if current_timezone == 'US/Eastern' %}selected{% endif %}>US/Eastern</option>
+                                        <option value="Europe/London" {% if current_timezone == 'Europe/London' %}selected{% endif %}>Europe/London</option>
                                     </select>
                                 </div>
                                 
-                                <div class="mb-3">
-                                    <label for="language" class="form-label">Language</label>
-                                    <select class="form-select" id="language" name="language" required>
-                                        <option value="en">English</option>
-                                        <option value="es">Spanish</option>
-                                        <option value="fr">French</option>
-                                        <option value="de">German</option>
-                                    </select>
-                                </div>
-                                
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-2"></i>Save Changes
-                                </button>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
                             </form>
                         </div>
                     </div>
                 </div>
 
-                <!-- Notifications -->
+                <!-- Password Change -->
+                <div class="tab-pane fade" id="password">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header">
+                            <h4 class="h5 mb-0">Change Password</h4>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('main.update_password') }}" class="needs-validation" novalidate>
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                
+                                <div class="mb-3">
+                                    <label for="current_password" class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" id="current_password" name="current_password" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="new_password" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Change Password</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notification Settings -->
                 <div class="tab-pane fade" id="notifications">
                     <div class="card shadow-sm mb-4">
                         <div class="card-header">
                             <h4 class="h5 mb-0">Notification Settings</h4>
                         </div>
                         <div class="card-body">
-                            <form method="POST" action="{{ url_for('main.update_notification_settings') }}" class="needs-validation" novalidate>
+                            <form method="POST" action="{{ url_for('main.update_notifications') }}" class="needs-validation" novalidate>
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 
                                 <div class="mb-3">
-                                    <label class="form-label d-block">Email Notifications</label>
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="emailUpdates" name="email_updates">
-                                        <label class="form-check-label" for="emailUpdates">Course updates and announcements</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="emailReminders" name="email_reminders">
-                                        <label class="form-check-label" for="emailReminders">Learning reminders</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="emailMarketing" name="email_marketing">
-                                        <label class="form-check-label" for="emailMarketing">Marketing communications</label>
+                                    <div class="form-check form-switch">
+                                        {% set email_notifications = user.get('settings', {}).get('notifications', {}).get('email', false) %}
+                                        <input type="checkbox" class="form-check-input" id="email_notifications" name="email_notifications"
+                                               {% if email_notifications %}checked{% endif %}>
+                                        <label class="form-check-label" for="email_notifications">Email Notifications</label>
                                     </div>
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label class="form-label d-block">Push Notifications</label>
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="pushUpdates" name="push_updates">
-                                        <label class="form-check-label" for="pushUpdates">Course updates and announcements</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="pushReminders" name="push_reminders">
-                                        <label class="form-check-label" for="pushReminders">Learning reminders</label>
+                                    <div class="form-check form-switch">
+                                        {% set push_notifications = user.get('settings', {}).get('notifications', {}).get('push', false) %}
+                                        <input type="checkbox" class="form-check-input" id="push_notifications" name="push_notifications"
+                                               {% if push_notifications %}checked{% endif %}>
+                                        <label class="form-check-label" for="push_notifications">Push Notifications</label>
                                     </div>
                                 </div>
                                 
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-2"></i>Save Changes
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Privacy -->
-                <div class="tab-pane fade" id="privacy">
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-header">
-                            <h4 class="h5 mb-0">Privacy Settings</h4>
-                        </div>
-                        <div class="card-body">
-                            <form method="POST" action="{{ url_for('main.update_privacy_settings') }}" class="needs-validation" novalidate>
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                
-                                <div class="mb-3">
-                                    <label class="form-label d-block">Profile Visibility</label>
-                                    <div class="form-check">
-                                        <input type="radio" class="form-check-input" id="profilePublic" name="profile_visibility" value="public">
-                                        <label class="form-check-label" for="profilePublic">Public</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="radio" class="form-check-input" id="profilePrivate" name="profile_visibility" value="private">
-                                        <label class="form-check-label" for="profilePrivate">Private</label>
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label d-block">Learning Activity</label>
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="showProgress" name="show_progress">
-                                        <label class="form-check-label" for="showProgress">Show my learning progress</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="showAchievements" name="show_achievements">
-                                        <label class="form-check-label" for="showAchievements">Show my achievements</label>
-                                    </div>
-                                </div>
-                                
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-2"></i>Save Changes
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Preferences -->
-                <div class="tab-pane fade" id="preferences">
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-header">
-                            <h4 class="h5 mb-0">Learning Preferences</h4>
-                        </div>
-                        <div class="card-body">
-                            <form method="POST" action="{{ url_for('main.update_learning_preferences') }}" class="needs-validation" novalidate>
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                
-                                <div class="mb-3">
-                                    <label for="learningGoal" class="form-label">Daily Learning Goal</label>
-                                    <select class="form-select" id="learningGoal" name="learning_goal" required>
-                                        <option value="15">15 minutes</option>
-                                        <option value="30">30 minutes</option>
-                                        <option value="45">45 minutes</option>
-                                        <option value="60">1 hour</option>
-                                        <option value="90">1.5 hours</option>
-                                        <option value="120">2 hours</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label for="difficulty" class="form-label">Preferred Difficulty</label>
-                                    <select class="form-select" id="difficulty" name="difficulty" required>
-                                        <option value="beginner">Beginner</option>
-                                        <option value="intermediate">Intermediate</option>
-                                        <option value="advanced">Advanced</option>
-                                    </select>
-                                </div>
-                                
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-2"></i>Save Changes
-                                </button>
+                                <button type="submit" class="btn btn-primary">Save Notification Settings</button>
                             </form>
                         </div>
                     </div>
@@ -206,52 +134,20 @@
 {% endblock %}
 
 {% block scripts %}
-<script nonce="{{ csp_nonce }}">
-document.addEventListener('DOMContentLoaded', function() {
-    // Form validation
-    const forms = document.querySelectorAll('.needs-validation');
-    Array.from(forms).forEach(form => {
-        form.addEventListener('submit', function(event) {
+<script>
+// Form validation
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
             if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
+                event.preventDefault()
+                event.stopPropagation()
             }
-            form.classList.add('was-validated');
-        });
-    });
-
-    // Set current values
-    const timezone = document.getElementById('timezone');
-    if (timezone) {
-        timezone.value = '{{ current_user.timezone|default('UTC', true) }}';
-    }
-
-    const language = document.getElementById('language');
-    if (language) {
-        language.value = '{{ current_user.language|default('en', true) }}';
-    }
-
-    // Set notification preferences
-    {% if current_user.notification_settings %}
-        document.getElementById('emailUpdates').checked = {{ current_user.notification_settings.email_updates|tojson }};
-        document.getElementById('emailReminders').checked = {{ current_user.notification_settings.email_reminders|tojson }};
-        document.getElementById('emailMarketing').checked = {{ current_user.notification_settings.email_marketing|tojson }};
-        document.getElementById('pushUpdates').checked = {{ current_user.notification_settings.push_updates|tojson }};
-        document.getElementById('pushReminders').checked = {{ current_user.notification_settings.push_reminders|tojson }};
-    {% endif %}
-
-    // Set privacy settings
-    {% if current_user.privacy_settings %}
-        document.querySelector(`input[name="profile_visibility"][value="{{ current_user.privacy_settings.profile_visibility }}"]`).checked = true;
-        document.getElementById('showProgress').checked = {{ current_user.privacy_settings.show_progress|tojson }};
-        document.getElementById('showAchievements').checked = {{ current_user.privacy_settings.show_achievements|tojson }};
-    {% endif %}
-
-    // Set learning preferences
-    {% if current_user.learning_preferences %}
-        document.getElementById('learningGoal').value = '{{ current_user.learning_preferences.learning_goal }}';
-        document.getElementById('difficulty').value = '{{ current_user.learning_preferences.difficulty }}';
-    {% endif %}
-});
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
 </script>
 {% endblock %} 

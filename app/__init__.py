@@ -16,6 +16,7 @@ from .services.data_service import load_data
 from .services.session_service import track_session
 from .models import User
 from .error_handlers import register_error_handlers
+from .routes import init_app as init_routes
 import uuid
 import logging
 from logging.handlers import RotatingFileHandler
@@ -87,9 +88,32 @@ def load_user(user_id):
 
 def create_app(config_name='development'):
     """Create and configure the Flask application."""
-    template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
-    app = Flask(__name__, template_folder=template_dir)
+    app = Flask(__name__)
+    
+    # Load configuration
     app.config.from_object(config[config_name])
+    
+    # Initialize extensions
+    jwt.init_app(app)
+    limiter.init_app(app)
+    login_manager.init_app(app)
+    csrf.init_app(app)
+    
+    # Setup secure headers
+    Talisman(app, content_security_policy=app.config.get('CSP', {}))
+    
+    # Setup logging
+    setup_logging(app)
+    
+    # Register error handlers
+    register_error_handlers(app)
+    
+    # Initialize routes
+    init_routes(app)
+    
+    # Register template filters
+    from .utils.filters import format_datetime
+    app.jinja_env.filters['datetime'] = format_datetime
     
     # Ensure secret key is set
     if not app.config.get('SECRET_KEY'):
@@ -100,91 +124,6 @@ def create_app(config_name='development'):
     app.config['SESSION_COOKIE_SECURE'] = False if app.config['ENV'] == 'development' else True
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    
-    # Initialize extensions
-    jwt.init_app(app)
-    limiter.init_app(app)
-    login_manager.init_app(app)
-    csrf.init_app(app)
-    
-    # Set up logging
-    setup_logging(app)
-    
-    # Security headers
-    if app.config['ENV'] == 'development':
-        # More permissive CSP for development
-        csp = {
-            'default-src': ['\'self\''],
-            'script-src': [
-                '\'self\'',
-                '\'unsafe-inline\'',
-                '\'unsafe-eval\'',
-                'https://cdn.jsdelivr.net',
-                'https://cdnjs.cloudflare.com',
-                'https://stackpath.bootstrapcdn.com'
-            ],
-            'style-src': [
-                '\'self\'',
-                '\'unsafe-inline\'',
-                'https://cdn.jsdelivr.net',
-                'https://stackpath.bootstrapcdn.com',
-                'https://cdnjs.cloudflare.com'
-            ],
-            'font-src': [
-                '\'self\'',
-                'https://cdnjs.cloudflare.com'
-            ],
-            'img-src': [
-                '\'self\'',
-                'data:',
-                'https:'
-            ]
-        }
-    else:
-        # Strict CSP for production
-        csp = {
-            'default-src': ['\'self\''],
-            'script-src': [
-                '\'self\'',
-                'https://cdn.jsdelivr.net',
-                'https://cdnjs.cloudflare.com',
-                'https://stackpath.bootstrapcdn.com'
-            ],
-            'style-src': [
-                '\'self\'',
-                '\'unsafe-inline\'',
-                'https://cdn.jsdelivr.net',
-                'https://stackpath.bootstrapcdn.com',
-                'https://cdnjs.cloudflare.com'
-            ],
-            'font-src': [
-                '\'self\'',
-                'https://cdnjs.cloudflare.com'
-            ],
-            'img-src': [
-                '\'self\'',
-                'data:',
-                'https:'
-            ]
-        }
-    
-    # Initialize Talisman with environment-specific CSP
-    Talisman(app,
-             content_security_policy=csp,
-             force_https=False)  # Set to True in production
-    
-    # Register blueprints
-    from .routes import auth, main
-    from .admin import admin
-    from .api import api
-    
-    app.register_blueprint(auth)
-    app.register_blueprint(main)
-    app.register_blueprint(admin)
-    app.register_blueprint(api)
-    
-    # Register error handlers
-    register_error_handlers(app)
     
     # Ensure required directories exist
     os.makedirs(app.config['DATA_DIR'], exist_ok=True)

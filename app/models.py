@@ -22,9 +22,10 @@ class User(UserMixin):
         self.username = user_data['username']
         self.email = user_data.get('email')
         self.password = user_data.get('password')
-        self.is_admin = user_data.get('is_admin', False)
+        self.role = user_data.get('role', 'user')
         self._is_active = user_data.get('is_active', True)
         self.created_at = user_data.get('created_at')
+        self.last_login = user_data.get('last_login')
     
     def get_id(self):
         """Return the user ID as a string."""
@@ -49,7 +50,11 @@ class User(UserMixin):
     def is_active(self, value):
         """Set whether the user account is active."""
         self._is_active = bool(value)
-    
+
+    def is_admin(self):
+        """Check if user has admin role."""
+        return self.role == 'admin'
+
     def __repr__(self):
-        """Return string representation of user."""
+        """Return string representation of the user."""
         return f'<User {self.username}>' 

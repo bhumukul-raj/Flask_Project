@@ -1,50 +1,51 @@
 {% extends "base.html" %}
 
-{% block title %}{{ subject.title }}{% endblock %}
+{% block title %}{{ subject.name }}{% endblock %}
 
 {% block content %}
-<div class="container py-5">
+<div class="container py-4">
     <!-- Subject Header -->
     <div class="row mb-4">
         <div class="col-lg-8">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ url_for('main.subjects') }}">Subjects</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">{{ subject.title }}</li>
+                    <li class="breadcrumb-item active">{{ subject.name }}</li>
                 </ol>
             </nav>
-            <h1 class="mb-3">{{ subject.title }}</h1>
-            <div class="d-flex align-items-center mb-3">
-                <span class="badge bg-primary me-2">{{ subject.level }}</span>
-                <span class="text-muted">
-                    <i class="fas fa-users me-1"></i>{{ subject.enrolled_count|default(0) }} students enrolled
-                </span>
+            <h1 class="mb-3">{{ subject.name }}</h1>
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <span class="badge bg-primary">{{ subject.level }}</span>
+                <span class="text-muted"><i class="fas fa-clock me-1"></i> {{ subject.duration }}</span>
+                <span class="text-muted"><i class="fas fa-tag me-1"></i> {{ subject.category }}</span>
             </div>
             <p class="lead">{{ subject.description }}</p>
         </div>
         <div class="col-lg-4">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    {% if current_user.is_authenticated %}
-                        {% if is_enrolled %}
-                            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary w-100 mb-3">
-                                <i class="fas fa-book-reader me-2"></i>Continue Learning
-                            </a>
+                    {% if user_enrollment %}
+                        <div class="mb-3">
+                            <h5 class="card-title">Your Progress</h5>
                             <div class="progress mb-2">
-                                <div class="progress-bar" role="progressbar" style="width: {{ progress|default(0) }}%"
-                                     aria-valuenow="{{ progress|default(0) }}" aria-valuemin="0" aria-valuemax="100">
-                                    {{ progress|default(0) }}%
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ user_enrollment.progress }}%" 
+                                     aria-valuenow="{{ user_enrollment.progress }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ user_enrollment.progress }}%
                                 </div>
                             </div>
-                            <small class="text-muted">Your progress</small>
-                        {% else %}
-                            <button class="btn btn-primary w-100" onclick="enrollSubject('{{ subject.id }}')">
-                                <i class="fas fa-plus-circle me-2"></i>Enroll Now
-                            </button>
-                        {% endif %}
+                            <small class="text-muted">
+                                Last activity: {{ user_enrollment.last_activity|datetime|default('Never') }}
+                            </small>
+                        </div>
+                        <a href="#content" class="btn btn-primary w-100">
+                            <i class="fas fa-play"></i> Continue Learning
+                        </a>
                     {% else %}
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary w-100">
-                            <i class="fas fa-sign-in-alt me-2"></i>Login to Enroll
+                        <a href="{{ url_for('main.enroll', subject_id=subject.id) }}" class="btn btn-primary w-100">
+                            <i class="fas fa-plus"></i> Enroll Now
                         </a>
                     {% endif %}
                 </div>
@@ -55,143 +56,114 @@
     <!-- Subject Content -->
     <div class="row">
         <div class="col-lg-8">
-            <!-- Overview Tab -->
+            <!-- Requirements -->
+            {% if subject.requirements %}
             <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h2 class="h5 mb-0">What You'll Learn</h2>
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Requirements</h5>
                 </div>
                 <div class="card-body">
-                    <ul class="list-unstyled mb-0">
-                        {% for objective in subject.learning_objectives %}
-                        <li class="mb-2">
-                            <i class="fas fa-check text-success me-2"></i>{{ objective }}
-                        </li>
+                    <ul class="mb-0">
+                        {% for req in subject.requirements %}
+                            <li>{{ req }}</li>
                         {% endfor %}
                     </ul>
                 </div>
             </div>
+            {% endif %}
 
             <!-- Course Content -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h2 class="h5 mb-0">Course Content</h2>
+            <div class="card shadow-sm mb-4" id="content">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Course Content</h5>
                 </div>
                 <div class="card-body">
                     <div class="accordion" id="courseContent">
                         {% for section in subject.sections %}
-                        <div class="accordion-item">
-                            <h3 class="accordion-header" id="heading{{ loop.index }}">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                        data-bs-target="#collapse{{ loop.index }}">
-                                    {{ section.title }}
-                                </button>
-                            </h3>
-                            <div id="collapse{{ loop.index }}" class="accordion-collapse collapse"
-                                 data-bs-parent="#courseContent">
-                                <div class="accordion-body">
-                                    <ul class="list-group list-group-flush">
-                                        {% for lesson in section.lessons %}
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <i class="fas fa-play-circle text-primary me-2"></i>
-                                                {{ lesson.title }}
-                                            </div>
-                                            <span class="badge bg-light text-dark">{{ lesson.duration }}</span>
-                                        </li>
-                                        {% endfor %}
-                                    </ul>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button {{ 'collapsed' if not loop.first }}" type="button" 
+                                            data-bs-toggle="collapse" data-bs-target="#section{{ section.id }}">
+                                        {{ section.title }}
+                                    </button>
+                                </h2>
+                                <div id="section{{ section.id }}" 
+                                     class="accordion-collapse collapse {{ 'show' if loop.first }}"
+                                     data-bs-parent="#courseContent">
+                                    <div class="accordion-body">
+                                        <div class="list-group list-group-flush">
+                                            {% for topic in section.topics %}
+                                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <i class="fas fa-{{ topic.content_type|default('file') }} me-2"></i>
+                                                        {{ topic.title }}
+                                                        {% if topic.duration %}
+                                                            <small class="text-muted ms-2">
+                                                                {{ (topic.duration / 60)|round|int }} min
+                                                            </small>
+                                                        {% endif %}
+                                                    </div>
+                                                    {% if user_enrollment and topic.id in user_enrollment.completed_topics %}
+                                                        <span class="badge bg-success rounded-pill">
+                                                            <i class="fas fa-check"></i>
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         {% endfor %}
                     </div>
-                </div>
-            </div>
-
-            <!-- Requirements -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h2 class="h5 mb-0">Requirements</h2>
-                </div>
-                <div class="card-body">
-                    <ul class="mb-0">
-                        {% for requirement in subject.requirements %}
-                        <li>{{ requirement }}</li>
-                        {% endfor %}
-                    </ul>
                 </div>
             </div>
         </div>
 
-        <!-- Sidebar -->
         <div class="col-lg-4">
-            <!-- Instructor Info -->
+            <!-- Tags -->
+            {% if subject.tags %}
             <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h2 class="h5 mb-0">Instructor</h2>
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Tags</h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <img src="{{ subject.instructor.avatar_url|default('https://via.placeholder.com/50') }}"
-                             class="rounded-circle me-3" width="50" height="50" alt="Instructor">
-                        <div>
-                            <h3 class="h6 mb-1">{{ subject.instructor.name }}</h3>
-                            <p class="small text-muted mb-0">{{ subject.instructor.title }}</p>
-                        </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for tag in subject.tags %}
+                            <span class="badge bg-light text-dark">{{ tag }}</span>
+                        {% endfor %}
                     </div>
-                    <p class="mb-0">{{ subject.instructor.bio }}</p>
                 </div>
             </div>
+            {% endif %}
 
-            <!-- Share -->
+            <!-- Stats -->
             <div class="card shadow-sm">
-                <div class="card-header">
-                    <h2 class="h5 mb-0">Share</h2>
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Course Stats</h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-flex justify-content-around">
-                        <a href="#" class="text-primary" title="Share on Facebook">
-                            <i class="fab fa-facebook fa-2x"></i>
-                        </a>
-                        <a href="#" class="text-info" title="Share on Twitter">
-                            <i class="fab fa-twitter fa-2x"></i>
-                        </a>
-                        <a href="#" class="text-success" title="Share on WhatsApp">
-                            <i class="fab fa-whatsapp fa-2x"></i>
-                        </a>
-                        <a href="#" class="text-secondary" title="Share via Email">
-                            <i class="fas fa-envelope fa-2x"></i>
-                        </a>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Enrolled Students</span>
+                        <span class="fw-bold">{{ subject.enrolled_users|length }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Total Sections</span>
+                        <span class="fw-bold">{{ subject.sections|length }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Total Topics</span>
+                        <span class="fw-bold">
+                            {% set topic_count = namespace(value=0) %}
+                            {% for section in subject.sections %}
+                                {% set topic_count.value = topic_count.value + section.topics|length %}
+                            {% endfor %}
+                            {{ topic_count.value }}
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script nonce="{{ csp_nonce }}">
-function enrollSubject(subjectId) {
-    fetch(`/api/subjects/${subjectId}/enroll`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token() }}'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.href = '{{ url_for('main.dashboard') }}';
-        } else {
-            alert('Failed to enroll in the subject. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while enrolling in the subject.');
-    });
-}
-</script>
 {% endblock %} 

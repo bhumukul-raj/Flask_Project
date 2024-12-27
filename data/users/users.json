@@ -3,10 +3,10 @@
         {
             "id": "e4ba3ad9-054c-4abd-a0f6-6c02ebd7900c",
             "username": "admin",
-            "password": "scrypt:32768:8:1$81pFHWZ9yHdEmykd$38cb9a452e2d10da4225fba974c51b9bcad3c38a9ba2686d976cbca1b642f8c10eed490200a57df11f3ac467cb8709cd3aa136108ed561a41451966b60cb7052",
             "email": "admin@gmail.com",
-            "created_at": "2024-12-27T08:04:51.158721",
+            "password": "scrypt:32768:8:1$81pFHWZ9yHdEmykd$38cb9a452e2d10da4225fba974c51b9bcad3c38a9ba2686d976cbca1b642f8c10eed490200a57df11f3ac467cb8709cd3aa136108ed561a41451966b60cb7052",
             "role": "admin",
+            "created_at": "2024-12-27T08:04:51.158721",
             "is_active": true,
             "last_login": null,
             "settings": {
@@ -15,15 +15,22 @@
                     "email": false,
                     "push": false
                 }
+            },
+            "profile": {
+                "first_name": "",
+                "last_name": "",
+                "bio": "",
+                "avatar": "default-avatar.png"
             }
         },
         {
             "id": "0d8dc65b-f867-4c52-9c56-8fb09289949c",
             "username": "student",
-            "email": "student@gmail.con",
+            "email": "student@gmail.com",
             "password": "scrypt:32768:8:1$KS9OEax4cSJ3bpeU$d9ebb19c91355cb9aede7c2edc1e218f2589a5e3514ffb72734aba2d54bb0652cad636f3178b0eb6eff1d545006ea64c6354c77b07eac70c375b912cb1235946",
             "role": "user",
             "created_at": "2024-12-27T16:44:28.065211",
+            "is_active": true,
             "last_login": null,
             "settings": {
                 "timezone": "UTC",
@@ -31,7 +38,17 @@
                     "email": false,
                     "push": false
                 }
+            },
+            "profile": {
+                "first_name": "",
+                "last_name": "",
+                "bio": "",
+                "avatar": "default-avatar.png"
             }
         }
-    ]
-}
+    ],
+    "metadata": {
+        "last_updated": "2024-12-27T16:44:28.065211",
+        "version": "1.0"
+    }
+} 
